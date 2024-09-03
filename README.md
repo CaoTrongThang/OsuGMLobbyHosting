@@ -6,7 +6,7 @@
 
 This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manage the lobby. The AI mostly will help players to use command. Additionally, it integrates with Discord, sending real-time updates about the lobby's status via embeds. Whether you're hosting a casual lobby or a competitive match, this project ensures everything runs smoothly.
 
-## Features (Because this mostly automatic so no much things you need to do)
+## Features (Since this bot is mostly automated, there isn’t much you need to do)
 
 - **AI-Powered Lobby Management**: Automates lobby tasks, reducing the need for manual intervention.
 - **Change Difficulty Base On The Median**: Change the lobby's difficulty base on the players in the room.
@@ -36,7 +36,7 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 
 - **`closelobby`**: Closes the lobby.
 - **`kickplayer`**: Kick a players from the lobby.
-- **`banplayer`**: bans a player from the lobby.
+- **`banplayer`**: bans a player from the lobby. (todo)
 
 ## Environment Variables
 
