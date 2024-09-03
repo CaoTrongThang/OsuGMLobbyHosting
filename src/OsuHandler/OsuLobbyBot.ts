@@ -124,9 +124,13 @@ class OsuLobbyBot {
   lobbyPlayers: Banchojs.BanchoLobbyPlayer[];
 
   playersChatHistory: PlayerChatHistory[] = [];
-  canChatWithAI = true;
-  canUpdateEmbed = false;
+
   maxChatHistoryLength = 44;
+
+  //Cooldown for things
+  canAutoPickMap = true
+  canUpdateEmbed = false;
+  canChatWithAI = true;
 
   currentMapMinDif = 0;
   lastMapMinDif = 0;
@@ -939,6 +943,10 @@ class OsuLobbyBot {
 
   async autoMapPick() {
     if (!this.osuChannel) return;
+    if(!this.canAutoPickMap) return;
+    setTimeout(() => {
+      this.canAutoPickMap = true
+    }, 1000 * 3);
     let currentDate: Date;
     let randomDate: Date;
     let bm: v1Beatmap;
