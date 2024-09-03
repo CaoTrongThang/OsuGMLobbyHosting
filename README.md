@@ -19,29 +19,31 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 ### Player Commands
 
 - **`rhelp`**: Displays all available commands for players.
-- **`votechangemode(player_name: string)`**: Switches the lobby's mode between "Host Rotate" and "Random Map". Requires the player's name as a parameter.
-- **`voteskipmap(player_name: string)`**: Skips the current map. Requires the player's name as a parameter.
-- **`voteskiphost(player_name: string)`**: Skips the current host. Requires the player's name as a parameter.
-- **`voteabortmatch(player_name: string)`**: Aborts the current match. Requires the player's name as a parameter.
-- **`votestartmatch(player_name: string)`**: Starts the match. Requires the player's name as a parameter.
+- **`votechangemode`**: Switches the lobby's mode between "Host Rotate" and "Random Map". Requires the player's name as a parameter.
+- **`voteskipmap`**: Skips the current map. Requires the player's name as a parameter.
+- **`voteskiphost`**: Skips the current host. Requires the player's name as a parameter.
+- **`voteabortmatch`**: Aborts the current match. Requires the player's name as a parameter.
+- **`votestartmatch`**: Starts the match. Requires the player's name as a parameter.
 - **`timeleft`**: Displays the time left in the current match, if it's in progress.
 
-### System Functions
+### System Functions (This Is Only For AI To Use)
 
-- **`kickplayer(playerName: string)`**: Kicks a player from the lobby.
-- **`moveplayertoslot(playerName: string, slot: number)`**: Moves a player to a specific slot (1-16).
-- **`getfivebeatmapsinbeatmaphistory()`**: Retrieves the last 5 played beatmaps in the lobby.
+- **`kickplayer`**: Kicks a player from the lobby.
+- **`moveplayertoslot`**: Moves a player to a specific slot (1-16).
+- **`getfivebeatmapsinbeatmaphistory`**: Retrieves the last 5 played beatmaps in the lobby.
 
 ### Admin Functions
 
-- **`closelobby()`**: Closes the lobby.
+- **`closelobby`**: Closes the lobby.
+- **`kickplayer`**: Kicks a player from the lobby.
+- **`banplayer`**: bans a player from the lobby.
 
 ## Environment Variables
 
 Create a `.env` file in the root of your project and configure the following environment variables:
 
 ```env
-GROQ_API_KEYS = "your_groq_api_key"
+GROQ_API_KEYS = "sda1233 1231443fd 12314gv"
 AI_REPLY_COOLDOWN_SECONDS = "10"
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
@@ -55,9 +57,7 @@ MONGO_DB_PASSWORD = "your_mongo_db_password"
 MONGO_OSU_DB_NAME = "OsuLobbyData"
 MONGO_OSU_DB_COLLECTION = "OsuPlayerData"
 
-OSU_CLIENT_ID = "your_osu_client_id"
-OSU_CLIENT_SECRET = "your_osu_client_secret"
-
+ADMIN_IDs = "123124 342351"
 OSU_IRC_PORT=6667
 OSU_IRC_USERNAME="your_osu_irc_username"
 OSU_IRC_PASSWORD="your_osu_irc_password"
@@ -71,7 +71,7 @@ OSU_API_KEY="your_osu_api_key"
 - Node.js (v14+)
 - MongoDB
 - A Discord bot token
-- Osu! API key
+- Osu! IRC password
 
 ### Installation
 
