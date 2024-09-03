@@ -1,6 +1,6 @@
 # Osu! Hosting Lobby with AI Management
 
-[addimagehere]
+![image](https://github.com/user-attachments/assets/37538fd3-34ea-4687-a803-c64369b0ad70)
 
 ## Overview
 
