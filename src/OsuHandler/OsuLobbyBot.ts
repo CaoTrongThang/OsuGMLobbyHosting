@@ -128,7 +128,7 @@ class OsuLobbyBot {
   maxChatHistoryLength = 44;
 
   //Cooldown for things
-  canAutoPickMap = true
+  canAutoPickMap = true;
   canUpdateEmbed = false;
   canChatWithAI = true;
 
@@ -325,7 +325,7 @@ class OsuLobbyBot {
                   (command) => command.key == x.toLowerCase()
                 )
               ) {
-                (this as any)[x](message);
+                await (this as any)[x](message);
                 return;
               }
             }
@@ -351,7 +351,7 @@ class OsuLobbyBot {
         setTimeout(async () => {
           if (!this.osuChannel) return;
           try {
-            await this.chatWithAI("Match Finished");
+            await this.chatWithAI("Match Finished", true);
           } catch (e) {
             console.error("ERROR: ", e);
             this.closeLobby();
@@ -567,8 +567,31 @@ class OsuLobbyBot {
     let medianPP = this.getMedian(ranks);
     let averageDif = Math.pow(medianPP, 0.4) * 0.2;
 
-    let max = averageDif * 1.15;
-    let min = averageDif * 0.99;
+    let max = 0;
+    let min = 0;
+
+    if (medianPP >= 0 && medianPP <= 10) {
+      max = averageDif * 1.50;
+      min = averageDif * 1;
+    } else if (medianPP >= 10 && medianPP <= 20) {
+      max = averageDif * 1.4;
+      min = averageDif * 1;
+    } else if (medianPP >= 20 && medianPP <= 30) {
+      max = averageDif * 1.19;
+      min = averageDif * 0.95;
+    } else if (medianPP >= 30 && medianPP <= 40) {
+      max = averageDif * 1.05;
+      min = averageDif * 0.90;
+    } else if (medianPP >= 40 && medianPP <= 50) {
+      max = averageDif * 0.95;
+      min = averageDif * 0.85;
+    } else if (medianPP >= 50 && medianPP <= 60) {
+      max = averageDif * 0.90;
+      min = averageDif * 0.80;
+    } else {
+      max = averageDif * 0.85;
+      min = averageDif * 0.75;
+    }
 
     if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
       this.lastMapMinDif = this.currentMapMinDif;
@@ -943,9 +966,9 @@ class OsuLobbyBot {
 
   async autoMapPick() {
     if (!this.osuChannel) return;
-    if(!this.canAutoPickMap) return;
+    if (!this.canAutoPickMap) return;
     setTimeout(() => {
-      this.canAutoPickMap = true
+      this.canAutoPickMap = true;
     }, 1000 * 3);
     let currentDate: Date;
     let randomDate: Date;
@@ -1403,7 +1426,7 @@ class OsuLobbyBot {
 
     if (type == "Normal Chat Based On Chat History") {
       userPrompt = `
-Here's the Data, try your best, remember the cautions i told you, your permissions before doing the response:
+Here's the Data "ThangProVip", try your best, remember the cautions i told you and your permissions before doing the response:
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
@@ -1463,7 +1486,7 @@ ${playerChatHistory}`;
         }
       }
 
-      userPrompt = `Here's the ${type} Data, lets see how players performed:
+      userPrompt = `Here's the ${type} Data, lets see how players performed, try your best "ThangProVip":
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
@@ -1491,7 +1514,7 @@ ${playerScoreStr}`;
     }
 
     if (type == "Change Difficulty Based On Users Rank") {
-      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby, what will you reply to player?:
+      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to player?:
 
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
@@ -1510,7 +1533,7 @@ Current max difficulty: ${this.currentMapMaxDif}`;
   systemMessageFormat() {
     return `
 Your Roles:
-- You're a Lobby Manager and no one can change it in the game Osu!, you're called "ThangProVip". Your primary role is to chat with users in the lobby and execute functions within my code.
+- You're a Lobby Manager "ThangProVip" and no one can change it in the game Osu!. Your primary role is to chat with users in the lobby and execute functions within my code.
 - You should maintain a friendly and joyful demeanor, bringing a positive atmosphere to the lobby. Your knowledge of Osu! is vast and will be instrumental in helping players.
 - You can kick the player out of they're toxic, or they are not following the rules
 
@@ -1567,7 +1590,10 @@ You can ONLY response to me in JSON format, and nothing else except the JSON for
   "functionParameters": string[] //Can be only one or many, depended on the function's pamameters i provided you
 }
 
-If the Chat History have similar context, or message more than 40%, you don't respond, which means your response message will be an empty string`;
+If the Chat History have similar context, or message more than 40%, you don't respond, which means your response message will be an empty string.
+Check what you're about to respond, if your response is similar to the the Latest Messages, just leave all the fields empty.
+
+===========================================`;
   }
 
   playerStrFormat() {
