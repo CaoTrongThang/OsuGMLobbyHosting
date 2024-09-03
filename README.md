@@ -118,6 +118,12 @@ For any inquiries or support, please reach out to [your email address].
 
 ---
 
-[addimagehere]
-
 **Enjoy your automated Osu! lobby experience!**
+
+<a href="https://discord.gg/game-mlem-686218489396068373">
+  <img src="https://static-00.iconduck.com/assets.00/discord-icon-256x256-sp1mmakp.png" alt="Discord" width="128" height="128">
+</a>
+** Our Discord For Pull Requests Or Your Ideas
+
+![image](https://github.com/user-attachments/assets/40e49783-031b-4bee-8985-acb789e98c4a)
+
