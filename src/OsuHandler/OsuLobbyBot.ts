@@ -570,7 +570,7 @@ class OsuLobbyBot {
 
     let max = 0;
     let min = 0;
-
+    //If mrekk come it, the dif won't be 13*, it will be around 11* <3
     if (medianPPPoint >= 0 && medianPPPoint <= 10) {
       max = averageDif * 1.5;
       min = averageDif * 1;
