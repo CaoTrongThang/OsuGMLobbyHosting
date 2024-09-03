@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manage the lobby. The AI automates various tasks like player management, map selection, and more. Additionally, it integrates with Discord, sending real-time updates about the lobby's status via embeds. Whether you're hosting a casual lobby or a competitive match, this project ensures everything runs smoothly.
+This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manage the lobby. The AI mostly will help players to use command. Additionally, it integrates with Discord, sending real-time updates about the lobby's status via embeds. Whether you're hosting a casual lobby or a competitive match, this project ensures everything runs smoothly.
 
 ## Features
 
