@@ -72,7 +72,7 @@ OSU_API_KEY="your_osu_api_key"
 - A Discord bot token
 - Osu! IRC password
 
-### Installation
+### Installation (Only 4 Steps)
 
 1. Clone the repository:
 
