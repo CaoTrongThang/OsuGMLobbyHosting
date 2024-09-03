@@ -97,7 +97,7 @@ OSU_API_KEY="your_osu_api_key"
 4. Start the bot:
 
    ```bash
-   npm start
+   npm start dev
    ```
 
 ## Usage
