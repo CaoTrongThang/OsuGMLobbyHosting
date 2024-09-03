@@ -1,10 +1,10 @@
 //TODO CHECK IF A HOST PICK DT, REMOVE IT OR THE MAP IS TOO EASY THEN DT IT
 //TODO AI CAN'T CHAT WHEN IN MATCH
 //TODO BEATMAPS HISTORY DOESN'T SHOW ANYTHING
-//TODO THÊM PHẦN PLAYING STATE CỦA NGƯỜI CHƠI VÀO LOBBY
 //TODO MAKE BAN FUNCTION
 
-//TODO! CALUCLATE DIF BASE ON THE TOTAL PLAYERS RANK
+//TODO CLOSELOBBY KHÔNG HOẠT ĐỘNG
+//TODO AUTO MAP PICK KHÔNG HOẠT ĐỘNG
 
 import dotenv from "dotenv";
 
@@ -128,9 +128,10 @@ class OsuLobbyBot {
   maxChatHistoryLength = 44;
 
   //Cooldown for things
-  canAutoPickMap = true;
   canUpdateEmbed = false;
   canChatWithAI = true;
+
+  medianPPPoint = 0;
 
   currentMapMinDif = 0;
   lastMapMinDif = 0;
@@ -174,6 +175,7 @@ class OsuLobbyBot {
     });
 
     let adminIDs = process.env.OSU_ADMIN_IDs!.split(" ");
+
     for (let i = 0; i < adminIDs.length; i++) {
       this.adminIDs.push(Number(adminIDs[i]));
     }
@@ -321,7 +323,7 @@ class OsuLobbyBot {
             for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
               if (
                 x.toLowerCase() == args[0] &&
-                this.getObjectKeyValue(this.commandsList).some(
+                this.getObjectKeyValue(this.adminFunctionList).some(
                   (command) => command.key == x.toLowerCase()
                 )
               ) {
@@ -346,19 +348,8 @@ class OsuLobbyBot {
 
       this.osuChannel.lobby.on("matchFinished", async () => {
         console.log("============= MATCH FINISHED =============");
-        //Changing Beatmap
-        this.matchStartTime = null;
-        setTimeout(async () => {
-          if (!this.osuChannel) return;
-          try {
-            await this.chatWithAI("Match Finished", true);
-          } catch (e) {
-            console.error("ERROR: ", e);
-            this.closeLobby();
-          }
-        }, 1000 * 1);
-
         if (!this.osuChannel) return;
+        //Changing Beatmap
         try {
           if (this.roomMode == "Auto Map Pick") {
             await this.autoMapPick();
@@ -372,6 +363,16 @@ class OsuLobbyBot {
             //Host Rotation
             await this.hostRotate();
           }
+          this.matchStartTime = null;
+          setTimeout(async () => {
+            if (!this.osuChannel) return;
+            try {
+              await this.chatWithAI("Match Finished", true);
+            } catch (e) {
+              console.error("ERROR: ", e);
+              this.closeLobby();
+            }
+          }, 1000 * 2);
         } catch (e) {
           console.error("ERROR: ", e);
           this.closeLobby();
@@ -571,32 +572,27 @@ class OsuLobbyBot {
     let min = 0;
 
     if (medianPPPoint >= 0 && medianPPPoint <= 10) {
-      max = averageDif * 1.50;
+      max = averageDif * 1.5;
       min = averageDif * 1;
     } else if (medianPPPoint >= 10 && medianPPPoint <= 20) {
       max = averageDif * 1.4;
       min = averageDif * 1;
     } else if (medianPPPoint >= 20 && medianPPPoint <= 30) {
       max = averageDif * 1.19;
-      min = averageDif * 0.95;
+      min = averageDif * 1.00;
     } else if (medianPPPoint >= 30 && medianPPPoint <= 40) {
       max = averageDif * 1.05;
-      min = averageDif * 0.90;
+      min = averageDif * 0.91;
     } else if (medianPPPoint >= 40 && medianPPPoint <= 50) {
       max = averageDif * 0.95;
       min = averageDif * 0.85;
     } else if (medianPPPoint >= 50 && medianPPPoint <= 60) {
-      max = averageDif * 0.90;
-      min = averageDif * 0.80;
+      max = averageDif * 0.9;
+      min = averageDif * 0.8;
     } else {
       max = averageDif * 0.85;
       min = averageDif * 0.75;
     }
-
-    console.log("Median PP: ", medianPPPoint);
-    console.log(`Min - Max: ${min}* - ${max}*`);
-    
-    
 
     if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
       this.lastMapMinDif = this.currentMapMinDif;
@@ -971,21 +967,11 @@ class OsuLobbyBot {
 
   async autoMapPick() {
     if (!this.osuChannel) return;
-    if (!this.canAutoPickMap) return;
-    setTimeout(() => {
-      this.canAutoPickMap = true;
-    }, 1000 * 3);
     let currentDate: Date;
     let randomDate: Date;
     let bm: v1Beatmap;
     if (this.currentMapMaxDif == 0 && this.currentMapMinDif == 0) {
       await this.osuChannel.lobby.setMap(75);
-      setTimeout(() => {
-        if (this.osuChannel)
-          this.currentBeatmap = this.covertBeatmapV2ToV1(
-            this.osuChannel.lobby.beatmap
-          );
-      }, 1000 * 10);
       return;
     }
     while (this.beatmaps.length < 1) {
@@ -997,14 +983,12 @@ class OsuLobbyBot {
         )
       );
 
-      while (this.beatmaps.length <= 0) {
-        this.beatmaps = await osuAPIRequest.getRandomBeatmap(
-          this.currentMapMinDif,
-          this.currentMapMaxDif,
-          this.maxLengthForAutoMapPickMode,
-          randomDate
-        );
-      }
+      this.beatmaps = await osuAPIRequest.getRandomBeatmap(
+        this.currentMapMinDif,
+        this.currentMapMaxDif,
+        this.maxLengthForAutoMapPickMode,
+        randomDate
+      );
     }
     if (!this.beatmaps) return;
 
@@ -1491,7 +1475,7 @@ ${playerChatHistory}`;
         }
       }
 
-      userPrompt = `Here's the ${type} Data, lets see how players performed, try your best "ThangProVip":
+      userPrompt = `Here's the ${type} Data, lets see how players performed, try your best give them your best thoughts "ThangProVip":
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
@@ -1564,7 +1548,6 @@ Permissions You - Lobby Manager Don't Have:
 - Lobby manager don't have permission to resize the lobby
 - Lobby manager don't have permission to reply to !System and !mp messages
 
-
 Available Commands in the Lobby, remind the players commands will be started with "!":
 ${this.getObjectKeyValue(this.commandsList)
   .map((command) => `- ${command.key}`)
@@ -1586,6 +1569,7 @@ Some More Information:
 - Beatmap's max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
 - If the user said he/her has a bad internet connection and can't download the map or need a faster link, you can send him/her this link to the beatmap: https://beatconnect.io/b/<beatmapset_id>
 - If the user asked you for the beatmap link, you can send him this link to the beatmap: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
+- Calculate Difficulty Based On This Formula = ((Total_PP_Of_All_Players_In_Lobby / Total_Player_In_Room) ^ 0.4) * 0.2
 
 
 You can ONLY response to me in JSON format, and nothing else except the JSON format, and your JSON must include the following structure:
@@ -1616,27 +1600,15 @@ Check what you're about to respond, if your response is similar to the the Lates
               }
             }
             slotIndex++;
-            if (slot.user.id == this.currentHost?.user.id) {
-              playersStr += `- ${slotIndex} [CURRENT HOST] | ${
-                slot.user.username
-              } (User's Stats: Rank: #${
-                slot.user.ppRank
-              } - ${slot.user.accuracy.toFixed(1)}% Acc - ${
-                slot.user.playcount
-              } Playcount - ${slot.user.level} Lv) (Has voted for: ${
-                votedFor || "No Votes"
-              })\n`;
-            } else {
-              playersStr += `- ${slotIndex} | ${
-                slot.user.username
-              } (User's Stats: Rank: #${
-                slot.user.ppRank
-              } - ${slot.user.accuracy.toFixed(1)}% Acc - ${
-                slot.user.playcount
-              } Playcount - ${slot.user.level} Lv) (Has voted for: ${
-                votedFor || "No Votes"
-              })\n`;
-            }
+            playersStr += `- ${slotIndex} | ${
+              slot.user.username
+            } (User's Stats: Rank: #${
+              slot.user.ppRank
+            } - ${slot.user.accuracy.toFixed(1)}% Acc - ${
+              slot.user.playcount
+            } Playcount - ${slot.user.level} Lv - PP: ${
+              slot.user.ppRaw
+            }) (Has voted for: ${votedFor || "No Votes"})\n`;
           } else {
             slotIndex++;
             playersStr += `- ${slotIndex} | [Empty]\n`;
@@ -1670,30 +1642,27 @@ Check what you're about to respond, if your response is similar to the the Lates
     return parseFloat(accuracy.toFixed(2));
   };
 
-  async closeLobby(message?: Banchojs.BanchoMessage, e?: unknown) {
+  async closeLobby(message?: Banchojs.BanchoMessage) {
     console.log("Closing lobby and disconnecting...");
     if (message) {
       if (osuLobby.adminIDs.includes(message?.user.id)) {
         await this.osuChannel?.sendAction(
           "Lobby is closed to make some changes, see you next time <3..."
         );
-        setTimeout(async () => {
-          await this.osuChannel?.lobby.closeLobby();
-          await this.osuClient.disconnect();
-          this.osuChannel = undefined;
-          osuLobby.embedMessage = null;
-        }, 1000 * 2);
+
+        await this.osuChannel?.lobby.closeLobby();
+        await this.osuClient.disconnect();
+        this.osuChannel = undefined;
+        osuLobby.embedMessage = null;
       }
     } else {
       await this.osuChannel?.sendAction(
         "Lobby is closed to make some changes, see you next time <3..."
       );
-      setTimeout(async () => {
-        await this.osuChannel?.lobby.closeLobby();
-        await this.osuClient.disconnect();
-        this.osuChannel = undefined;
-        osuLobby.embedMessage = null;
-      }, 1000 * 2);
+      await this.osuChannel?.lobby.closeLobby();
+      await this.osuClient.disconnect();
+      this.osuChannel = undefined;
+      osuLobby.embedMessage = null;
     }
   }
 
