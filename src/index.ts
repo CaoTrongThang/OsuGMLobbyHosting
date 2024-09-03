@@ -3,6 +3,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import * as http from "http";
 import { MongoClient } from "mongodb";
+import osuAPIRequest from "./OsuHandler/OsuAPIRequest";
 
 dotenv.config();
 

@@ -4,6 +4,8 @@
 //TODO THÊM PHẦN PLAYING STATE CỦA NGƯỜI CHƠI VÀO LOBBY
 //TODO MAKE BAN FUNCTION
 
+//TODO! CALUCLATE DIF BASE ON THE TOTAL PLAYERS RANK
+
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -11,6 +13,7 @@ dotenv.config();
 
 import * as Banchojs from "bancho.js";
 import osuAPIRequest, {
+  Beatmap,
   PlayerRecentPlays,
   Beatmap as v1Beatmap,
 } from "./OsuAPIRequest";
@@ -22,10 +25,12 @@ import * as ns from "nodesu";
 
 type RoomMode = "Auto Map Pick" | "Host Rotate";
 type PlayerStatus = "joined" | "left";
+
 type BeatmapIDs = {
   beatmap_id: number;
   beatmapset_id: number;
 };
+
 type PlayerChatHistory = {
   playerName: string;
   message: string;
@@ -58,6 +63,11 @@ type VoteData = {
   voteType: VoteType;
 };
 
+type ChatWithAIType =
+  | "Normal Chat Based On Chat History"
+  | "Match Finished"
+  | "Change Difficulty Based On Users Rank";
+
 class OsuLobbyBot {
   osuClient = new Banchojs.BanchoClient({
     username: process.env.OSU_IRC_USERNAME!,
@@ -67,7 +77,7 @@ class OsuLobbyBot {
 
   osuChannel: Banchojs.BanchoMultiplayerChannel | undefined;
 
-  adminIDs : number[] = [];
+  adminIDs: number[] = [];
 
   roomMode: RoomMode = "Auto Map Pick";
 
@@ -108,22 +118,22 @@ class OsuLobbyBot {
   adminFunctionList = {
     closelobby: "close the lobby",
     kickplayer:
-    "kick a player from the lobby, with the function's parameters: playerName: string",
+      "kick a player from the lobby, with the function's parameters: playerName: string",
   };
-
-  channel: Banchojs.BanchoMultiplayerChannel | undefined;
 
   lobbyPlayers: Banchojs.BanchoLobbyPlayer[];
 
-  //Compare the current chat history with the last chat history for the bot to understand the conversation better, if two current chat history and last chat history are the same, the bot will understand it better
   playersChatHistory: PlayerChatHistory[] = [];
   canChatWithAI = true;
   canUpdateEmbed = false;
-  maxChatHistoryLength = 35;
+  maxChatHistoryLength = 44;
 
-  mapMinDif = 5.2;
-  mapMaxDif = 6.83;
-  maxLength = 381;
+  currentMapMinDif = 0;
+  lastMapMinDif = 0;
+  currentMapMaxDif = 0;
+  lastMapMaxDif = 0;
+  maxLengthForAutoMapPickMode = 240;
+  maxLengthForHostRotate = 400;
 
   matchStartTime: number | null = null;
   currentBeatmap: v1Beatmap | null = null;
@@ -143,7 +153,7 @@ class OsuLobbyBot {
   currentHost?: Banchojs.BanchoLobbyPlayer;
 
   lastBeatmapToRepick: BeatmapIDs | null = null;
-  matchState: boolean = false;
+  matchIsPlaying: boolean = false;
   matchIsStarting = false;
 
   lobbyName = "";
@@ -157,7 +167,6 @@ class OsuLobbyBot {
 
       await this.osuChannel?.lobby.closeLobby();
       await this.osuClient.disconnect();
-
     });
 
     let adminIDs = process.env.OSU_ADMIN_IDs!.split(" ");
@@ -175,15 +184,18 @@ class OsuLobbyBot {
 
     await this.init();
     await this.createAndHandleLobby();
-    await osuLobby.deleteAllMessagesInOsuLobbyChannel()
-    
+
     setInterval(async () => {
       this.updateEmbed();
-      if (!this.matchState) return;
+      if (!this.matchIsPlaying) return;
       if (await this.areAllPlayersReady()) {
         this.startMatchTimer();
       }
     }, 1000 * 7);
+
+    setInterval(async () => {
+      await this.changeDifficultyBaseOnPlayersRank();
+    }, 1000 * 60);
 
     setInterval(async () => {
       if (this.osuChannel) {
@@ -201,24 +213,9 @@ class OsuLobbyBot {
   }
 
   async createAndHandleLobby() {
-    this.lobbyName = `${this.mapMinDif}* - ${this.mapMaxDif}* | Auto - !rhelp - DC: Game Mlem`;
+    this.lobbyName = `${this.currentMapMinDif}* - ${this.currentMapMaxDif}* | Auto - !rhelp - DC: Game Mlem`;
     try {
-      // const lName = await utils.readFromFile("lobbyName.txt", "/OsuHandler/");
-      // console.log("🚀 ~ OsuLobby ~ createAndHandleLobby ~ lName:", lName);
-      // if (lName) {
-      //   try {
-      //     let resChannel = client.getChannel(lName);
-      //     if (resChannel && "lobby" in resChannel) {
-      //       await resChannel.join()
-      //       await resChannel.lobby.this.closeLobby();
-      //     }
-      //   } catch (e) {
-      //     console.log("ERROR: ", e);
-      //   }
-      // }
-
       this.osuChannel = await this.osuClient.createLobby(this.lobbyName, false);
-      // utils.writeToFile(this.osuChannel.name, "lobbyName.txt", "/OsuHandler/");
 
       if (!this.osuChannel) {
         this.closeLobby();
@@ -226,7 +223,7 @@ class OsuLobbyBot {
       }
 
       await this.osuChannel.lobby.setPassword("");
-      await this.autoPickMap();
+      await this.autoMapPick();
 
       await this.osuChannel.lobby.setMods([], true);
 
@@ -240,6 +237,10 @@ class OsuLobbyBot {
         console.log(`+ ${lobbyPlayer.player.user.username} joined the lobby`);
         await this.updateLobbyPlayers(lobbyPlayer.player, "joined");
 
+        if (this.lobbyPlayers.length == 1) {
+          await this.changeDifficultyBaseOnPlayersRank();
+        }
+
         if (this.roomMode == "Host Rotate") {
           if (this.lobbyPlayers.length == 1) {
             await this.hostRotate();
@@ -248,8 +249,8 @@ class OsuLobbyBot {
 
         if (this.roomMode == "Auto Map Pick") {
           if (this.lobbyPlayers.length >= 4) {
-            if(await this.areAllPlayersReady())
-            await this.startMatchTimer(this.startMatchTimeout);
+            if (await this.areAllPlayersReady())
+              await this.startMatchTimer(this.startMatchTimeout);
           }
         }
       });
@@ -263,7 +264,7 @@ class OsuLobbyBot {
             lobbyPlayer.user.id == this.currentHost?.user.id &&
             this.roomMode == "Host Rotate"
           ) {
-            if (this.matchState == false && this.lobbyPlayers.length > 0) {
+            if (this.matchIsPlaying == false && this.lobbyPlayers.length > 0) {
               await this.hostRotate();
             } else if (this.lobbyPlayers.length == 0) {
               this.currentHost = undefined;
@@ -306,15 +307,7 @@ class OsuLobbyBot {
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
         this.chatHistoryHandler(message);
-
-        if (this.canChatWithAI) {
-          this.canChatWithAI = false;
-          this.chatWithAI();
-
-          setTimeout(() => {
-            this.canChatWithAI = true;
-          }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
-        }
+        this.chatWithAI("Normal Chat Based On Chat History");
 
         let msg = message.message;
         console.log(`${message.user.username}: ${msg}`);
@@ -354,7 +347,7 @@ class OsuLobbyBot {
         setTimeout(async () => {
           if (!this.osuChannel) return;
           try {
-            await this.chatWithAI(true, this.osuChannel.lobby.scores);
+            await this.chatWithAI("Match Finished");
           } catch (e) {
             console.error("ERROR: ", e);
             this.closeLobby();
@@ -364,7 +357,7 @@ class OsuLobbyBot {
         if (!this.osuChannel) return;
         try {
           if (this.roomMode == "Auto Map Pick") {
-            await this.autoPickMap();
+            await this.autoMapPick();
 
             if (this.lobbyPlayers.length >= 4) {
               this.osuChannel?.lobby.startMatch(this.startMatchTimeout);
@@ -399,10 +392,10 @@ class OsuLobbyBot {
           try {
             if (b != null) {
               if (
-                b.difficultyRating > this.mapMaxDif ||
-                b.difficultyRating < this.mapMinDif ||
+                b.difficultyRating > this.currentMapMaxDif ||
+                b.difficultyRating < this.currentMapMinDif ||
                 b.mode != 0 ||
-                b.totalLength > this.maxLength
+                b.totalLength > this.maxLengthForHostRotate
               ) {
                 if (this.osuChannel) {
                   //i wanna calculate the beatmap difficulty with DT
@@ -413,10 +406,12 @@ class OsuLobbyBot {
                           2
                         )}*) - ${utils.formatSeconds(
                           b.totalLength
-                        )} ain't meet the requirements ${this.mapMinDif}* - ${
-                          this.mapMaxDif
+                        )} ain't meet the requirements ${
+                          this.currentMapMinDif
+                        }* - ${
+                          this.currentMapMaxDif
                         }* - Max Length: ${utils.formatSeconds(
-                          this.maxLength
+                          this.maxLengthForHostRotate
                         )} - osu! Standard*`
                       ),
                       await this.osuChannel.lobby.setMap(
@@ -456,8 +451,9 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("playing", async (state) => {
-        this.matchState = state;
-        if (this.channel) this.addBeatmapHistory(this.channel.lobby.beatmap);
+        this.matchIsPlaying = state;
+        if (this.osuChannel)
+          this.addBeatmapHistory(this.osuChannel.lobby.beatmap);
         if (state) {
           this.matchIsStarting = false;
         }
@@ -540,6 +536,48 @@ class OsuLobbyBot {
     }
   }
 
+  async changeLobbyName() {
+    if (this.osuChannel) {
+      this.lobbyName = `${this.currentMapMinDif.toFixed(
+        1
+      )}* - ${this.currentMapMaxDif.toFixed(
+        1
+      )}* | Auto - !rhelp - DC: Game Mlem`;
+      await this.osuChannel.lobby.setName(this.lobbyName);
+    }
+  }
+
+  async changeDifficultyBaseOnPlayersRank() {
+    if (this.matchIsPlaying) return;
+    let ranks: number[] = [];
+
+    if (!this.osuChannel) return;
+
+    for (const slot of this.osuChannel.lobby.slots) {
+      if (slot) {
+        if (slot.user) {
+          ranks.push(slot.user.ppRaw);
+        }
+      }
+    }
+    let medianPP = this.getMedian(ranks);
+    let averageDif = Math.pow(medianPP, 0.4) * 0.2;
+
+    let max = averageDif * 1.15;
+    let min = averageDif * 0.99;
+
+    if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
+      this.lastMapMinDif = this.currentMapMinDif;
+      this.lastMapMaxDif = this.currentMapMaxDif;
+      this.currentMapMinDif = min;
+      this.currentMapMaxDif = max;
+      await this.autoMapPick();
+      await this.changeLobbyName();
+      await this.chatWithAI("Change Difficulty Based On Users Rank", true);
+    }
+  }
+
+  //Show players commands
   async rhelp(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     await this.osuChannel.sendMessage(
@@ -556,22 +594,26 @@ class OsuLobbyBot {
     const timeLeft = this.calculateTimeLeft();
     if (timeLeft !== 0) {
       this.osuChannel.sendMessage(
-        `Time left of the beatmap: ${utils.formatSeconds(timeLeft)}, lets wait <3`
+        `Time left of the beatmap: ${utils.formatSeconds(
+          timeLeft
+        )}, lets wait <3`
       );
     } else {
       this.osuChannel.sendMessage("No match is currently in progress.");
     }
   }
+
   async voteHandler(
     message?: Banchojs.BanchoMessage,
     voteT?: VoteType,
     playerName?: string
   ) {
-
     if (!this.osuChannel) return;
 
-    if(this.matchState){
-      await this.osuChannel.sendMessage("Can't host when the match is in playing!")
+    if (this.matchIsPlaying) {
+      await this.osuChannel.sendMessage(
+        "Can't host when the match is in playing!"
+      );
       return;
     }
 
@@ -614,6 +656,7 @@ class OsuLobbyBot {
       }
     }
   }
+
   async resetVote(voteT?: VoteType) {
     if (voteT == undefined) return;
     this.voteData = this.voteData.filter((v) => v.voteType != voteT);
@@ -632,6 +675,7 @@ class OsuLobbyBot {
       this.resetVote("Abort Match");
     }
   }
+
   async votestartmatch(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     this.voteHandler(message, "Start Match", playerName);
@@ -645,6 +689,7 @@ class OsuLobbyBot {
       this.resetVote("Start Match");
     }
   }
+
   async voteskiphost(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     if (!(this.roomMode == "Host Rotate")) return;
@@ -674,7 +719,7 @@ class OsuLobbyBot {
       this.voteData.filter((v) => v.voteType == "Skip Map").length >
       this.lobbyPlayers.length / 3
     ) {
-      await this.autoPickMap();
+      await this.autoMapPick();
       this.osuChannel.sendMessage(`Map is skipped`);
       this.resetVote("Skip Map");
     }
@@ -683,8 +728,7 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
 
     this.voteHandler(message, "Change Mode", playerName);
-    console.log("CHANGE MODE !!!!!");
-    
+
     if (
       this.voteData.filter((v) => v.voteType == "Change Mode").length >
       this.lobbyPlayers.length / 3
@@ -692,7 +736,7 @@ class OsuLobbyBot {
       this.resetVote("Change Mode");
       if (this.roomMode == "Host Rotate") {
         await this.osuChannel.lobby.clearHost();
-        await this.autoPickMap();
+        await this.autoMapPick();
         this.roomMode = "Auto Map Pick";
         if (this.lobbyPlayers.length >= 4) {
           await this.startMatchTimer(this.startMatchTimeout);
@@ -723,6 +767,7 @@ class OsuLobbyBot {
       await this.closeLobby();
     }
   }
+
   async moveplayertoslot(playerName?: string, slot?: any) {
     try {
       if (!this.osuChannel && !(slot instanceof Number) && !slot && !playerName)
@@ -741,6 +786,7 @@ class OsuLobbyBot {
       await this.closeLobby();
     }
   }
+
   getfivebeatmapsinbeatmaphistory() {
     if (this.beatmapHistory.length == 0) {
       this.osuChannel?.sendMessage(`There's no beatmap in history yet`);
@@ -834,6 +880,7 @@ class OsuLobbyBot {
     );
     return Math.round(timeLeft);
   }
+
   async updateLobbyPlayers(
     player: Banchojs.BanchoLobbyPlayer,
     status: PlayerStatus
@@ -856,11 +903,55 @@ class OsuLobbyBot {
       console.log(e);
     }
   }
-  async autoPickMap() {
+
+  covertBeatmapV2ToV1(bm: ns.Beatmap) {
+    let bmv1: Beatmap | null = null;
+    try {
+      bmv1 = {
+        artist: bm.artist,
+        beatmap_id: bm.beatmapId.toString(),
+        beatmapset_id: bm.beatmapSetId.toString(),
+        bpm: bm.bpm.toString(),
+        diff_aim: bm.diffAim.toString(),
+        diff_approach: bm.diffApproach.toString(),
+        diff_drain: bm.diffDrain.toString(),
+        diff_overall: bm.diffOverall.toString(),
+        diff_size: bm.diffSize.toString(),
+        diff_speed: bm.diffSpeed.toString(),
+        difficultyrating: bm.difficultyRating.toString(),
+        favourite_count: bm.favoriteCount.toString(),
+        hit_length: bm.hitLength.toString(),
+        max_combo: bm.maxCombo.toString(),
+        mode: bm.mode!.toString(),
+        playcount: bm.playcount.toString(),
+        rating: bm.rating.toString(),
+        tags: bm.tags,
+        title: bm.title,
+        total_length: bm.totalLength.toString(),
+      };
+    } catch (e) {
+      console.log(e);
+      this.closeLobby();
+    }
+
+    return bmv1;
+  }
+
+  async autoMapPick() {
     if (!this.osuChannel) return;
     let currentDate: Date;
     let randomDate: Date;
     let bm: v1Beatmap;
+    if (this.currentMapMaxDif == 0 && this.currentMapMinDif == 0) {
+      await this.osuChannel.lobby.setMap(75);
+      setTimeout(() => {
+        if (this.osuChannel)
+          this.currentBeatmap = this.covertBeatmapV2ToV1(
+            this.osuChannel.lobby.beatmap
+          );
+      }, 1000 * 10);
+      return;
+    }
     while (this.beatmaps.length < 1) {
       currentDate = new Date();
       randomDate = new Date(
@@ -872,9 +963,9 @@ class OsuLobbyBot {
 
       while (this.beatmaps.length <= 0) {
         this.beatmaps = await osuAPIRequest.getRandomBeatmap(
-          this.mapMinDif,
-          this.mapMaxDif,
-          this.maxLength,
+          this.currentMapMinDif,
+          this.currentMapMaxDif,
+          this.maxLengthForAutoMapPickMode,
           randomDate
         );
       }
@@ -988,7 +1079,7 @@ class OsuLobbyBot {
   //Create an embed for the match using the client variable in index.ts, send it to this channel id "967479977979297862", it'll contain the lobby's name, players info, the current map, and start updating it when there's player in the lobby, update it every 10 seconds
   async updateEmbed() {
     try {
-      if(!this.canUpdateEmbed) return;
+      if (!this.canUpdateEmbed) return;
       const channel = (await discordClient.channels.fetch(
         process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
       )) as TextChannel;
@@ -1011,17 +1102,17 @@ class OsuLobbyBot {
                   slot.user.username.length > 10
                     ? slot.user.username.slice(0, 8) + "..."
                     : slot.user.username
-                } #${
-                  utils.formatNumber(slot.user.ppRank)
-                }](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
+                } #${utils.formatNumber(
+                  slot.user.ppRank
+                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
               } else {
                 playersStr += `:green_square: **[${
                   slot.user.username.length > 10
                     ? slot.user.username.slice(0, 10) + "..."
                     : slot.user.username
-                } #${
-                  utils.formatNumber(slot.user.ppRank)
-                }](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
+                } #${utils.formatNumber(
+                  slot.user.ppRank
+                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
               }
               slotIndex++;
             } else {
@@ -1101,15 +1192,14 @@ class OsuLobbyBot {
         )
         .setURL("https://discord.gg/game-mlem-686218489396068373");
 
-      try{
+      try {
         if (!this.embedMessage) {
           this.embedMessage = await channel.send({ embeds: [embed] });
           return;
         }
 
         await this.embedMessage.edit({ embeds: [embed] });
-
-      } catch(e){
+      } catch (e) {
         console.error("Error editing message:", e);
         this.embedMessage = await channel.send({ embeds: [embed] });
         return;
@@ -1178,151 +1268,136 @@ class OsuLobbyBot {
   }
 
   //This function will be updated using setInterval, it'll send the chat history of the latest 100 message to the cohereAI to get the response, and send the response to the channel or maybe use it to execute some function in the future
-  async chatWithAI(
-    matchFinished: boolean = false,
-    playerScore?: Banchojs.BanchoLobbyPlayerScore[]
-  ) {
-    setTimeout(async () => {
-      
-      if (this.lobbyPlayers.length == 0) return;
+  async chatWithAI(type: ChatWithAIType, instant: boolean = false) {
+    if (this.lobbyPlayers.length == 0) return;
+
+    if (instant) {
+      this.canChatWithAI = true;
+    }
+    if (this.canChatWithAI == false) return;
+    this.canChatWithAI = false;
+    setTimeout(() => {
+      this.canChatWithAI = true;
+    }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
+
+    if (type == "Normal Chat Based On Chat History") {
       if (!this.playersChatHistory) return;
+    }
 
-      try {
-        let playerChatHistory = this.chatHistoryFormat();
+    try {
+      let playerChatHistory = this.chatHistoryFormat();
 
-        let listOfPlayerStr = this.playerStrFormat();
-        let systemPrompt = this.systemMessageFormat();
-        let assistantPrompt = `{
+      let listOfPlayerStr = this.playerStrFormat();
+      let systemPrompt = this.systemMessageFormat();
+      let assistantPrompt = `{
         "response": "Undertood",
         "functionName": "",
         "functionParameters": []
       }`;
 
-        let userPrompt = await this.userPromptFormat(
-          matchFinished,
-          playerScore || undefined,
-          listOfPlayerStr,
-          playerChatHistory
-        );
+      let userPrompt = await this.userPromptFormat(
+        type,
+        listOfPlayerStr,
+        playerChatHistory
+      );
+      if (!userPrompt) return;
 
-        console.log(userPrompt);
+      console.log("USER PROMPT: ", userPrompt);
 
-        let response = await groqRequestAI.chat(
-          systemPrompt,
-          assistantPrompt,
-          userPrompt
-        );
+      let response = await groqRequestAI.chat(
+        systemPrompt,
+        assistantPrompt,
+        userPrompt
+      );
 
-        if (!response) return;
-
-        let responseJSON: AIresponse = JSON.parse(response);
-
-        console.log(responseJSON);
-
-        if (responseJSON.response) {
-          await this.osuChannel?.sendMessage(responseJSON.response);
-        }
-
-        for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
-          if (
-            x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
-            this.getObjectKeyValue(this.commandsList).some(
-              (command) => command.key == x.toLowerCase()
-            )
-          ) {
-            (this as any)[x](undefined, ...responseJSON.functionParameters);
-          }
-        }
-        for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
-          if (
-            x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
-            this.getObjectKeyValue(this.systemFunctionsList).some(
-              (command) => command.key == x.toLowerCase()
-            )
-          ) {
-            (this as any)[x](...responseJSON.functionParameters);
-          }
-        }
+      if (!response) return;
+      let responseJSON: AIresponse;
+      try {
+        responseJSON = JSON.parse(response);
       } catch (e) {
         console.log(e);
-        this.closeLobby();
+        return;
       }
-    }, 1000 * 3);
+      if (!responseJSON) return;
+
+      console.log(responseJSON);
+
+      if (responseJSON.response) {
+        await this.osuChannel?.sendMessage(responseJSON.response);
+      }
+
+      for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
+        if (
+          x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
+          this.getObjectKeyValue(this.commandsList).some(
+            (command) => command.key == x.toLowerCase()
+          )
+        ) {
+          (this as any)[x](undefined, ...responseJSON.functionParameters);
+        }
+      }
+      for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
+        if (
+          x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
+          this.getObjectKeyValue(this.systemFunctionsList).some(
+            (command) => command.key == x.toLowerCase()
+          )
+        ) {
+          (this as any)[x](...responseJSON.functionParameters);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      this.closeLobby();
+    }
   }
 
   async deleteAllMessagesInOsuLobbyChannel() {
-      try {
-        const channel = (await discordClient.channels.fetch(
-          process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
-        )) as TextChannel;
+    try {
+      const channel = (await discordClient.channels.fetch(
+        process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
+      )) as TextChannel;
 
-        if (!channel) {
-          console.log("Channel not found");
-          return;
-        }
-
-        console.log("Deleting all messages in osu lobby channel");
-
-        let fetchedMessages;
-
-        do {
-          fetchedMessages = await channel.messages.fetch({ limit: 10 });
-          if(fetchedMessages)
-          await channel
-            .bulkDelete(fetchedMessages, true)
-            .catch((error) => console.error("Error deleting messages:", error));
-        } while (fetchedMessages.size >= 2);
-
-        this.embedMessage = null
-        this.canUpdateEmbed = true;
-      } catch (e) {
-        await this.closeLobby();
-        console.log(e);
+      if (!channel) {
+        console.log("Channel not found");
+        return;
       }
+
+      console.log("Deleting all messages in osu lobby channel...");
+
+      let fetchedMessages;
+
+      do {
+        fetchedMessages = await channel.messages.fetch({ limit: 10 });
+
+        if (!fetchedMessages) return;
+
+        await channel
+          .bulkDelete(fetchedMessages, true)
+          .catch((error) => console.error("Error deleting messages:", error));
+      } while (fetchedMessages.size >= 2);
+
+      this.embedMessage = null;
+      this.canUpdateEmbed = true;
+    } catch (e) {
+      await this.closeLobby();
+      console.log(e);
+    }
   }
   async userPromptFormat(
-    matchFinished: boolean = false,
-    playerScore: Banchojs.BanchoLobbyPlayerScore[] | undefined,
+    type: ChatWithAIType,
     listOfPlayerStr: string,
     playerChatHistory: string | undefined = ""
   ) {
     let userPrompt = ``;
-    let playerScoreStr = "";
-    //Get top 3 scores
+    let playerScoreStr = ``;
+    console.log("TYPE: ", type);
 
-    if (playerScore) {
-      for (const x of playerScore
-        .map((x) => {
-          return {
-            score: x.score,
-            playerID: x.player.user.id,
-            playerName: x.player.user.username,
-          };
-        })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)) {
-        if (x) {
-          let playerS = await osuAPIRequest.getPlayerRecentPlays(
-            x.playerID.toString()
-          );
-
-          if (playerS) {
-            playerScoreStr += `- Match Result Of ${x.playerName} : Score ${
-              x.score
-            } - Mods ${this.getMods(Number(playerS[0].enabled_mods))
-              .map((x) => x.shortMod)
-              .join(",")} - Accuracy ${this.calculateAccuracy(
-              playerS[0]
-            )}% - Rank ${playerS[0].rank}`;
-          }
-        }
-      }
-    }
-
-    if (!matchFinished && !playerScore) {
+    if (type == "Normal Chat Based On Chat History") {
       userPrompt = `
-Here's the Data about Lobby right now, try your best, remember the cautions, your permissions before doing the response:
+Here's the Data, try your best, remember the cautions i told you, your permissions before doing the response:
 
+Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
@@ -1331,7 +1406,7 @@ Total Players: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
-Is Match Playing: ${this.matchState ? "Is Playing" : "Not Playing"}
+Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 Map's Information: ${this.currentBeatmap?.title} - ${
         this.currentBeatmap?.artist
@@ -1347,9 +1422,42 @@ Map's Information: ${this.currentBeatmap?.title} - ${
 
 Message History:
 ${playerChatHistory}`;
-    } else {
-      userPrompt = `Here's the Data after the match finised, lets see how players perform:
+    }
 
+    if (type == "Match Finished") {
+      if (!this.osuChannel) return;
+      if (this.osuChannel.lobby.scores) {
+        for (const x of this.osuChannel?.lobby.scores
+          .map((x) => {
+            return {
+              score: x.score,
+              playerID: x.player.user.id,
+              playerName: x.player.user.username,
+            };
+          })
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)) {
+          if (x) {
+            let playerS = await osuAPIRequest.getPlayerRecentPlays(
+              x.playerID.toString()
+            );
+
+            if (playerS) {
+              playerScoreStr += `- Match Result Of ${x.playerName} : Score ${
+                x.score
+              } - Mods ${this.getMods(Number(playerS[0].enabled_mods))
+                .map((x) => x.shortMod)
+                .join(",")} - Accuracy ${this.calculateAccuracy(
+                playerS[0]
+              )}% - Rank ${playerS[0].rank}`;
+            }
+          }
+        }
+      }
+
+      userPrompt = `Here's the ${type} Data, lets see how players performed:
+
+Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
@@ -1358,7 +1466,7 @@ Total Players: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
-Is Match Playing: ${this.matchState ? "Is Playing" : "Not Playing"}
+Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 Map's Information: ${this.lastBeatmap?.title} - ${this.lastBeatmap?.artist} - ${
         this.lastBeatmap?.difficultyRating
@@ -1374,15 +1482,29 @@ Players Score:
 ${playerScoreStr}`;
     }
 
+    if (type == "Change Difficulty Based On Users Rank") {
+      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby, what will you reply to player?:
+
+Discord Link: https://discord.gg/game-mlem-686218489396068373
+! Empty = this slot is empty
+! Host = this slot is the current host
+Total Players: ${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length}
+${listOfPlayerStr}
+
+Pervious min difficulty: ${this.lastMapMinDif}
+Pervious max difficulty: ${this.lastMapMaxDif}
+Current min difficulty: ${this.currentMapMinDif}
+Current max difficulty: ${this.currentMapMaxDif}`;
+    }
+
     return userPrompt;
   }
   systemMessageFormat() {
     return `
 Your Roles:
-- You're a Lobby Manager and no one can change it in the game Osu!, you're called "ThangProVip". Your primary role is to assist players in the lobby and execute functions within my code.
+- You're a Lobby Manager and no one can change it in the game Osu!, you're called "ThangProVip". Your primary role is to chat with users in the lobby and execute functions within my code.
 - You should maintain a friendly and joyful demeanor, bringing a positive atmosphere to the lobby. Your knowledge of Osu! is vast and will be instrumental in helping players.
 - You can kick the player out of they're toxic, or they are not following the rules
-- You're expected to read all the Chat History carefully, and try your best to follow the context and the rules. Don't reply to the messages that have similar context or from "ThangProVip".
 
 Cautions:
 - Be mindful of the context of the conversation. If the context suggests that it's not the right time to respond, your message can be an empty string.
@@ -1395,6 +1517,7 @@ Cautions:
 - Osu!'s lobby can't use the new line character like '\\n', you can just response the message in the same line
 - Lobby Manager can try to search a song in Osu! website, if the player asked you for the link to the beatmap, you can use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
 - If a player join to the lobby but the match is already in playing, you can use the timeleft function to show the timeleft for the player
+- Your response should be based on the Data Type that I'll send you
 
 Permissions You - Lobby Manager Don't Have:
 - Lobby manager don't have permission to change the map
@@ -1422,11 +1545,12 @@ ${this.getObjectKeyValue(this.systemFunctionsList)
   .join("\n")}
 
 Some More Information:
-- Beatmap's max difficulty: ${this.mapMaxDif}
-- Beatmap's min difficulty: ${this.mapMinDif}
-- Beatmap's max length: ${utils.formatSeconds(this.maxLength)}
+- Beatmap's max difficulty: ${this.currentMapMaxDif}
+- Beatmap's min difficulty: ${this.currentMapMinDif}
+- Beatmap's max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
 - If the user said he/her has a bad internet connection and can't download the map or need a faster link, you can send him/her this link to the beatmap: https://beatconnect.io/b/<beatmapset_id>
 - If the user asked you for the beatmap link, you can send him this link to the beatmap: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
+
 
 You can ONLY response to me in JSON format, and nothing else except the JSON format, and your JSON must include the following structure:
 {
@@ -1517,7 +1641,7 @@ If the Chat History have similar context, or message more than 40%, you don't re
         setTimeout(async () => {
           await this.osuChannel?.lobby.closeLobby();
           await this.osuClient.disconnect();
-          this.channel = undefined;
+          this.osuChannel = undefined;
           osuLobby.embedMessage = null;
         }, 1000 * 2);
       }
@@ -1528,9 +1652,26 @@ If the Chat History have similar context, or message more than 40%, you don't re
       setTimeout(async () => {
         await this.osuChannel?.lobby.closeLobby();
         await this.osuClient.disconnect();
-        this.channel = undefined;
+        this.osuChannel = undefined;
         osuLobby.embedMessage = null;
       }, 1000 * 2);
+    }
+  }
+
+  getMedian(arr: number[]): number {
+    // Step 1: Sort the array in ascending order
+    const sortedArr = arr.sort((a, b) => a - b);
+
+    // Step 2: Determine the middle index
+    const mid = Math.floor(sortedArr.length / 2);
+
+    // Step 3: Check if the length of the array is odd or even
+    if (sortedArr.length % 2 !== 0) {
+      // If odd, return the middle element
+      return sortedArr[mid];
+    } else {
+      // If even, return the average of the two middle elements
+      return (sortedArr[mid - 1] + sortedArr[mid]) / 2;
     }
   }
 }

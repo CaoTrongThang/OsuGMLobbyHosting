@@ -25,48 +25,26 @@ export type PlayerRecentPlays = {
   user_id: string;
   date: string;
   rank: string;
-  score_id: string
+  score_id: string;
 };
 
 export type Beatmap = {
   beatmapset_id: string;
   beatmap_id: string;
-  approved: string;
   total_length: string;
   hit_length: string;
-  version: string;
-  file_md5: string;
   diff_size: string;
   diff_overall: string;
   diff_approach: string;
   diff_drain: string;
   mode: string;
-  count_normal: string;
-  count_slider: string;
-  count_spinner: string;
-  submit_date: Date;
-  approved_date: null;
-  last_update: Date;
   artist: string;
-  artist_unicode: string;
   title: string;
-  title_unicode: string;
-  creator: string;
-  creator_id: string;
   bpm: string;
-  source: string;
-  tags: string;
-  genre_id: string;
-  language_id: string;
+  tags: string[];
   favourite_count: string;
   rating: string;
-  storyboard: string;
-  video: string;
-  download_unavailable: string;
-  audio_unavailable: string;
   playcount: string;
-  passcount: string;
-  packs: null;
   max_combo: string;
   diff_aim: string;
   diff_speed: string;
@@ -99,8 +77,7 @@ class OsuAPIRequest {
       let filteredBeatmaps;
 
       filteredBeatmaps = beatmaps.filter(
-        (b) =>
-          Number(b.playcount) > 10000 && Number(b.total_length) < maxLength
+        (b) => Number(b.playcount) > 10000 && Number(b.total_length) < maxLength
       );
 
       filteredBeatmaps = beatmaps.filter(
@@ -120,6 +97,7 @@ class OsuAPIRequest {
       return [];
     }
   }
+
   async getPlayerRecentPlays(userID: string) {
     let url = `https://osu.ppy.sh/api/get_user_recent`;
     const response = await axios(url, {
@@ -131,7 +109,6 @@ class OsuAPIRequest {
       },
     });
 
-    
     if (response) {
       return response.data as PlayerRecentPlays[];
     } else {
@@ -183,10 +160,11 @@ class OsuAPIRequest {
         Authorization: `Bearer ${this.osuAPIKey?.access_token}`,
       },
     });
-    console.log("RATING: ",response.data);
+    console.log("RATING: ", response.data);
     return response.data;
   }
 }
 
-const osuRequest = new OsuAPIRequest();
-export default osuRequest;
+const osuAPIRequest = new OsuAPIRequest();
+
+export default osuAPIRequest;
