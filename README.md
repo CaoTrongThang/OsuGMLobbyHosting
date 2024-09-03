@@ -1,6 +1,6 @@
 # Osu! Hosting Lobby with AI Management
 
-[addimagehere]
+![image](https://github.com/user-attachments/assets/37538fd3-34ea-4687-a803-c64369b0ad70)
 
 ## Overview
 
@@ -12,7 +12,6 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 - **Real-Time Discord Integration**: Sends live updates to a specified Discord channel, keeping everyone informed.
 - **Flexible Game Modes**: Easily switch between "Host Rotate" and "Random Map" modes.
 - **Player Commands**: A variety of commands that players can use to interact with the lobby.
-- **Admin Tools**: Administrative functions to control the lobby effectively.
 
 ## Commands
 
@@ -43,8 +42,8 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 Create a `.env` file in the root of your project and configure the following environment variables:
 
 ```env
-GROQ_API_KEYS = "sda1233 1231443fd 12314gv"
-AI_REPLY_COOLDOWN_SECONDS = "5"
+GROQ_API_KEYS = "sda1233 1231443fd 12314gv" //Should create at least 3 accounts on GROQ to get 3 API keys, i mean if you don't want to pay
+AI_REPLY_COOLDOWN_SECONDS = "5" //If you're using a free account, so this will be depended on how many API Keys you have, if you only have 1 (which mean 6k tokens), you should change this to like 20
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
@@ -73,7 +72,7 @@ OSU_API_KEY="your_osu_api_key"
 - A Discord bot token
 - Osu! IRC password
 
-### Installation
+### Installation (Only 4 Steps)
 
 1. Clone the repository:
 
@@ -118,11 +117,12 @@ For any inquiries or support, please reach out to [your email address].
 
 ---
 
-**![Our Discord For Pull Requests Or Your Ideas, Enjoy your automated Osu! lobby experience!](https://discord.gg/game-mlem-686218489396068373)**  
+## [Our Discord For Pull Requests Or Your Ideas, Enjoy your automated Osu! lobby experience!](https://discord.gg/game-mlem-686218489396068373)
+
 <a href="https://discord.gg/game-mlem-686218489396068373">
-  <img src="https://static-00.iconduck.com/assets.00/discord-icon-256x256-sp1mmakp.png" alt="Discord" width="32" height="32">
+  <img src="https://static-00.iconduck.com/assets.00/discord-icon-256x256-sp1mmakp.png" alt="Discord" width="64" height="64">
 </a>
 
-
+Me and my mate are playing visual studio code right here :>
 ![image](https://github.com/user-attachments/assets/40e49783-031b-4bee-8985-acb789e98c4a)
 
