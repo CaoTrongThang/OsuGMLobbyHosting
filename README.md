@@ -118,9 +118,9 @@ For any inquiries or support, please reach out to [your email address].
 
 ---
 
-**Our Discord For Pull Requests Or Your Ideas, Enjoy your automated Osu! lobby experience!**
+**![Our Discord For Pull Requests Or Your Ideas, Enjoy your automated Osu! lobby experience!](https://discord.gg/game-mlem-686218489396068373)**  
 <a href="https://discord.gg/game-mlem-686218489396068373">
-  <img src="https://static-00.iconduck.com/assets.00/discord-icon-256x256-sp1mmakp.png" alt="Discord" width="128" height="128">
+  <img src="https://static-00.iconduck.com/assets.00/discord-icon-256x256-sp1mmakp.png" alt="Discord" width="32" height="32">
 </a>
 
 
