@@ -57,7 +57,7 @@ MONGO_DB_PASSWORD = "your_mongo_db_password"
 MONGO_OSU_DB_NAME = "OsuLobbyData"
 MONGO_OSU_DB_COLLECTION = "OsuPlayerData"
 
-ADMIN_IDs = "123124 342351"
+OSU_ADMIN_IDs = "123124 342351"
 OSU_IRC_PORT=6667
 OSU_IRC_USERNAME="your_osu_irc_username"
 OSU_IRC_PASSWORD="your_osu_irc_password"
