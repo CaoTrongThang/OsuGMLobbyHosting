@@ -43,8 +43,8 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 Create a `.env` file in the root of your project and configure the following environment variables:
 
 ```env
-GROQ_API_KEYS = "sda1233 1231443fd 12314gv" //Should create at least 3 accounts on GROQ to get 3 API keys, i mean if you don't want to pay
-AI_REPLY_COOLDOWN_SECONDS = "5" //If you're using a free account, so this will be depended on how many API Keys you have, if you only have 1 (which mean 6k tokens), you should change this to like 20
+GROQ_API_KEYS = "sda1233 1231443fd 12314gv 412312 5fsdfd" //Should create at least 4 accounts on GROQ to get 4 API keys, i mean if you don't want to pay
+AI_REPLY_COOLDOWN_SECONDS = "12" //If you're using a free account, so this will be depended on how many API Keys you have, if you only have 1 (which mean 6k tokens), you should change this to like 20
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
