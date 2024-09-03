@@ -19,11 +19,11 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 ### Player Commands
 
 - **`rhelp`**: Displays all available commands for players.
-- **`votechangemode`**: Switches the lobby's mode between "Host Rotate" and "Random Map". Requires the player's name as a parameter.
-- **`voteskipmap`**: Skips the current map. Requires the player's name as a parameter.
-- **`voteskiphost`**: Skips the current host. Requires the player's name as a parameter.
-- **`voteabortmatch`**: Aborts the current match. Requires the player's name as a parameter.
-- **`votestartmatch`**: Starts the match. Requires the player's name as a parameter.
+- **`votechangemode`**: Switches the lobby's mode between "Host Rotate" and "Random Map".
+- **`voteskipmap`**: Skips the current map.
+- **`voteskiphost`**: Skips the current host.
+- **`voteabortmatch`**: Aborts the current match.
+- **`votestartmatch`**: Starts the match.
 - **`timeleft`**: Displays the time left in the current match, if it's in progress.
 
 ### System Functions (This Is Only For AI To Use)
@@ -35,7 +35,7 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 ### Admin Functions
 
 - **`closelobby`**: Closes the lobby.
-- **`kickplayer`**: Kicks a player from the lobby.
+- **`kickplayer`**: Kick a players from the lobby.
 - **`banplayer`**: bans a player from the lobby.
 
 ## Environment Variables
@@ -44,7 +44,7 @@ Create a `.env` file in the root of your project and configure the following env
 
 ```env
 GROQ_API_KEYS = "sda1233 1231443fd 12314gv"
-AI_REPLY_COOLDOWN_SECONDS = "10"
+AI_REPLY_COOLDOWN_SECONDS = "5"
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
