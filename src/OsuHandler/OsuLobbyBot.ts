@@ -199,7 +199,7 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       await this.changeDifficultyBaseOnPlayersRank();
-    }, 1000 * 60);
+    }, 1000 * 30);
 
     setInterval(async () => {
       if (this.osuChannel) {
@@ -564,34 +564,39 @@ class OsuLobbyBot {
         }
       }
     }
-    let medianPP = this.getMedian(ranks);
-    let averageDif = Math.pow(medianPP, 0.4) * 0.2;
+    let medianPPPoint = Math.pow(this.getMedian(ranks), 0.4);
+    let averageDif = medianPPPoint * 0.2;
 
     let max = 0;
     let min = 0;
 
-    if (medianPP >= 0 && medianPP <= 10) {
+    if (medianPPPoint >= 0 && medianPPPoint <= 10) {
       max = averageDif * 1.50;
       min = averageDif * 1;
-    } else if (medianPP >= 10 && medianPP <= 20) {
+    } else if (medianPPPoint >= 10 && medianPPPoint <= 20) {
       max = averageDif * 1.4;
       min = averageDif * 1;
-    } else if (medianPP >= 20 && medianPP <= 30) {
+    } else if (medianPPPoint >= 20 && medianPPPoint <= 30) {
       max = averageDif * 1.19;
       min = averageDif * 0.95;
-    } else if (medianPP >= 30 && medianPP <= 40) {
+    } else if (medianPPPoint >= 30 && medianPPPoint <= 40) {
       max = averageDif * 1.05;
       min = averageDif * 0.90;
-    } else if (medianPP >= 40 && medianPP <= 50) {
+    } else if (medianPPPoint >= 40 && medianPPPoint <= 50) {
       max = averageDif * 0.95;
       min = averageDif * 0.85;
-    } else if (medianPP >= 50 && medianPP <= 60) {
+    } else if (medianPPPoint >= 50 && medianPPPoint <= 60) {
       max = averageDif * 0.90;
       min = averageDif * 0.80;
     } else {
       max = averageDif * 0.85;
       min = averageDif * 0.75;
     }
+
+    console.log("Median PP: ", medianPPPoint);
+    console.log(`Min - Max: ${min}* - ${max}*`);
+    
+    
 
     if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
       this.lastMapMinDif = this.currentMapMinDif;
