@@ -2,7 +2,7 @@ import osuLobby from "./OsuHandler/OsuLobbyBot";
 import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import * as http from "http";
-import { Db, MongoClient } from "mongodb";
+import { MongoClient } from "mongodb";
 
 dotenv.config();
 
@@ -33,7 +33,13 @@ export const discordClient = new Client({
   ],
 });
 
-//This HTTP server will keep the bot alive, not be shut down by heroku
+
+(async () => { 
+  await discordClient.login(process.env.DISCORD_BOT_TOKEN);
+  await osuLobby.deleteAllMessagesInOsuLobbyChannel()
+})();
+
+//This HTTP server will keep the bot alive, not be shut down by Render
 const server = http.createServer((req, res) => {
   if (req.url === "/ping") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -47,6 +53,10 @@ const server = http.createServer((req, res) => {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not Found", status: 404 }));
   }
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} (Used For Uptime Robot)`);
 });
 
 osuLobby.start();

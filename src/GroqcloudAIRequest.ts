@@ -3,23 +3,13 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-class GroqAIAccount {
-  groqAccount: Groq | null = null;
-  maxTokens: number;
-  constructor(apiKey: string, maxTokens: number) {
-    this.groqAccount = new Groq({ apiKey: apiKey });
-    this.maxTokens = maxTokens;
-  }
-}
-
 class GroqCloudAIRequest {
-  accounts: GroqAIAccount[] = [];
+  accounts: Groq[] = [];
+
   currentAccoutIndex = 0;
   constructor() {
     let apiKeys = process.env.GROQ_API_KEYS!.split(" ");
-    for (let i = 0; i < apiKeys.length; i++) {
-      this.accounts.push(new GroqAIAccount(apiKeys[i], 6000));
-    }
+    this.accounts = apiKeys.map((x) => new Groq({ apiKey: x }));
   }
 
   async chat(
@@ -30,7 +20,7 @@ class GroqCloudAIRequest {
     try {
       const completion = await this.accounts[
         this.currentAccoutIndex
-      ].groqAccount!.chat.completions.create({
+      ].chat.completions.create({
         messages: [
           {
             role: "system",
@@ -56,17 +46,6 @@ class GroqCloudAIRequest {
       console.log("AI REQUEST FAILED: ", e);
       return null;
     }
-  }
-
-  calculateTokens(text: string): number {
-    // Regular expression to split the text into words and punctuation
-    const tokens = text.match(/\w+|[^\w\s]/g);
-
-    // If no tokens are found, return 0
-    if (!tokens) return 0;
-
-    // Return the count of tokens
-    return tokens.length;
   }
 }
 

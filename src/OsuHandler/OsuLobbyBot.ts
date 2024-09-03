@@ -1,6 +1,9 @@
 //TODO CHECK IF A HOST PICK DT, REMOVE IT OR THE MAP IS TOO EASY THEN DT IT
 //TODO AI CAN'T CHAT WHEN IN MATCH
 //TODO BEATMAPS HISTORY DOESN'T SHOW ANYTHING
+//TODO THÊM PHẦN PLAYING STATE CỦA NGƯỜI CHƠI VÀO LOBBY
+//TODO MAKE BAN FUNCTION
+
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -64,7 +67,7 @@ class OsuLobbyBot {
 
   osuChannel: Banchojs.BanchoMultiplayerChannel | undefined;
 
-  adminID = [25986650];
+  adminIDs : number[] = [];
 
   roomMode: RoomMode = "Auto Map Pick";
 
@@ -104,6 +107,8 @@ class OsuLobbyBot {
 
   adminFunctionList = {
     closelobby: "close the lobby",
+    kickplayer:
+    "kick a player from the lobby, with the function's parameters: playerName: string",
   };
 
   channel: Banchojs.BanchoMultiplayerChannel | undefined;
@@ -113,6 +118,7 @@ class OsuLobbyBot {
   //Compare the current chat history with the last chat history for the bot to understand the conversation better, if two current chat history and last chat history are the same, the bot will understand it better
   playersChatHistory: PlayerChatHistory[] = [];
   canChatWithAI = true;
+  canUpdateEmbed = false;
   maxChatHistoryLength = 35;
 
   mapMinDif = 5.2;
@@ -151,7 +157,13 @@ class OsuLobbyBot {
 
       await this.osuChannel?.lobby.closeLobby();
       await this.osuClient.disconnect();
+
     });
+
+    let adminIDs = process.env.OSU_ADMIN_IDs!.split(" ");
+    for (let i = 0; i < adminIDs.length; i++) {
+      this.adminIDs.push(Number(adminIDs[i]));
+    }
   }
 
   async init() {
@@ -160,11 +172,11 @@ class OsuLobbyBot {
 
   async start() {
     console.log("Creating Osu Lobby...");
-    this.deleteAllMessagesInOsuLobbyChannel();
 
     await this.init();
     await this.createAndHandleLobby();
-
+    await osuLobby.deleteAllMessagesInOsuLobbyChannel()
+    
     setInterval(async () => {
       this.updateEmbed();
       if (!this.matchState) return;
@@ -236,6 +248,7 @@ class OsuLobbyBot {
 
         if (this.roomMode == "Auto Map Pick") {
           if (this.lobbyPlayers.length >= 4) {
+            if(await this.areAllPlayersReady())
             await this.startMatchTimer(this.startMatchTimeout);
           }
         }
@@ -307,7 +320,7 @@ class OsuLobbyBot {
         console.log(`${message.user.username}: ${msg}`);
         if (msg.startsWith("!")) {
           let args = msg.substring(1, msg.length).toLowerCase().split(" ");
-          if (this.adminID.includes(message.user.id)) {
+          if (this.adminIDs.includes(message.user.id)) {
             for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
               if (
                 x.toLowerCase() == args[0] &&
@@ -697,7 +710,7 @@ class OsuLobbyBot {
     if (!playerName) return;
     try {
       let player = this.lobbyPlayers.find((p) => p.user.username == playerName);
-      if (this.adminID.includes(Number(player?.user.id))) {
+      if (this.adminIDs.includes(Number(player?.user.id))) {
         await this.osuChannel.sendMessage(
           `You can't kick ${player?.user.username} because he is an admin`
         );
@@ -975,6 +988,18 @@ class OsuLobbyBot {
   //Create an embed for the match using the client variable in index.ts, send it to this channel id "967479977979297862", it'll contain the lobby's name, players info, the current map, and start updating it when there's player in the lobby, update it every 10 seconds
   async updateEmbed() {
     try {
+      if(!this.canUpdateEmbed) return;
+      const channel = (await discordClient.channels.fetch(
+        process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
+      )) as TextChannel;
+
+      if (!channel) {
+        console.log(
+          `${process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID} is not a valid channel id`
+        );
+        return;
+      }
+
       let playersStr = "";
       let slotIndex = 0;
       for (const slot of this.osuChannel?.lobby.slots || []) {
@@ -984,10 +1009,10 @@ class OsuLobbyBot {
               if (slot.user.id == this.currentHost?.user.id) {
                 playersStr += `:yellow_square: **[${
                   slot.user.username.length > 10
-                    ? slot.user.username.slice(0, 10) + "..."
+                    ? slot.user.username.slice(0, 8) + "..."
                     : slot.user.username
                 } #${
-                  slot.user.ppRank
+                  utils.formatNumber(slot.user.ppRank)
                 }](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
               } else {
                 playersStr += `:green_square: **[${
@@ -995,7 +1020,7 @@ class OsuLobbyBot {
                     ? slot.user.username.slice(0, 10) + "..."
                     : slot.user.username
                 } #${
-                  slot.user.ppRank
+                  utils.formatNumber(slot.user.ppRank)
                 }](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
               }
               slotIndex++;
@@ -1014,15 +1039,6 @@ class OsuLobbyBot {
         playersStr = "No players in the lobby";
       }
 
-      const channel = (await discordClient.channels.fetch(
-        process.env.DISORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
-      )) as TextChannel;
-
-      if (!channel) {
-        console.log(
-          `${process.env.DISORD_OSU_LOBBLY_STATS_CHANNEL_ID} is not a valid channel id`
-        );
-      }
       let beatmapStr = `[${this.currentBeatmap?.title}(${Number(
         this.currentBeatmap?.difficultyrating
       ).toFixed(2)}*) - ${this.currentBeatmap?.artist} - ${utils.formatSeconds(
@@ -1085,12 +1101,19 @@ class OsuLobbyBot {
         )
         .setURL("https://discord.gg/game-mlem-686218489396068373");
 
-      if (!this.embedMessage) {
+      try{
+        if (!this.embedMessage) {
+          this.embedMessage = await channel.send({ embeds: [embed] });
+          return;
+        }
+
+        await this.embedMessage.edit({ embeds: [embed] });
+
+      } catch(e){
+        console.error("Error editing message:", e);
         this.embedMessage = await channel.send({ embeds: [embed] });
         return;
       }
-
-      this.embedMessage.edit({ embeds: [embed] });
     } catch (e) {
       console.log(e);
       this.closeLobby();
@@ -1228,10 +1251,9 @@ class OsuLobbyBot {
   }
 
   async deleteAllMessagesInOsuLobbyChannel() {
-    setTimeout(async () => {
       try {
         const channel = (await discordClient.channels.fetch(
-          process.env.DISORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
+          process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
         )) as TextChannel;
 
         if (!channel) {
@@ -1244,17 +1266,19 @@ class OsuLobbyBot {
         let fetchedMessages;
 
         do {
-          fetchedMessages = await channel.messages.fetch({ limit: 20 });
-
+          fetchedMessages = await channel.messages.fetch({ limit: 10 });
+          if(fetchedMessages)
           await channel
             .bulkDelete(fetchedMessages, true)
             .catch((error) => console.error("Error deleting messages:", error));
         } while (fetchedMessages.size >= 2);
+
+        this.embedMessage = null
+        this.canUpdateEmbed = true;
       } catch (e) {
         await this.closeLobby();
         console.log(e);
       }
-    }, 1000 * 3);
   }
   async userPromptFormat(
     matchFinished: boolean = false,
@@ -1367,7 +1391,7 @@ Cautions:
       this.maxChatHistoryLength
     } messages in the chat history, so if you are uncertain about the context, it may be best not to respond.
 - If Players Chat History is about commands or System's messages, don't response, just response an empty string
-- You don't response to messages from player's name called "ThangProVip", as these are your own messages. In such cases, just response with an empty string.
+- You don't response to messages from player's name called "ThangProVip", as these are your own messages. In such cases, just response with an empty fields.
 - Osu!'s lobby can't use the new line character like '\\n', you can just response the message in the same line
 - Lobby Manager can try to search a song in Osu! website, if the player asked you for the link to the beatmap, you can use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
 - If a player join to the lobby but the match is already in playing, you can use the timeleft function to show the timeleft for the player
@@ -1403,11 +1427,12 @@ Some More Information:
 - Beatmap's max length: ${utils.formatSeconds(this.maxLength)}
 - If the user said he/her has a bad internet connection and can't download the map or need a faster link, you can send him/her this link to the beatmap: https://beatconnect.io/b/<beatmapset_id>
 - If the user asked you for the beatmap link, you can send him this link to the beatmap: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
+
 You can ONLY response to me in JSON format, and nothing else except the JSON format, and your JSON must include the following structure:
 {
   "response": "string",
   "functionName": "string",
-  "functionParameters": string[] //Can be only one or many, depended on the function
+  "functionParameters": string[] //Can be only one or many, depended on the function's pamameters i provided you
 }
 
 If the Chat History have similar context, or message more than 40%, you don't respond, which means your response message will be an empty string`;
@@ -1485,7 +1510,7 @@ If the Chat History have similar context, or message more than 40%, you don't re
   async closeLobby(message?: Banchojs.BanchoMessage, e?: unknown) {
     console.log("Closing lobby and disconnecting...");
     if (message) {
-      if (osuLobby.adminID.includes(message?.user.id)) {
+      if (osuLobby.adminIDs.includes(message?.user.id)) {
         await this.osuChannel?.sendAction(
           "Lobby is closed to make some changes, see you next time <3..."
         );
@@ -1494,7 +1519,7 @@ If the Chat History have similar context, or message more than 40%, you don't re
           await this.osuClient.disconnect();
           this.channel = undefined;
           osuLobby.embedMessage = null;
-        }, 1000 * 5);
+        }, 1000 * 2);
       }
     } else {
       await this.osuChannel?.sendAction(
@@ -1505,7 +1530,7 @@ If the Chat History have similar context, or message more than 40%, you don't re
         await this.osuClient.disconnect();
         this.channel = undefined;
         osuLobby.embedMessage = null;
-      }, 1000 * 5);
+      }, 1000 * 2);
     }
   }
 }

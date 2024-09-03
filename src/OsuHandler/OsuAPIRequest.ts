@@ -100,7 +100,7 @@ class OsuAPIRequest {
 
       filteredBeatmaps = beatmaps.filter(
         (b) =>
-          Number(b.playcount) > 10000 && Number(b.total_length) <= maxLength
+          Number(b.playcount) > 10000 && Number(b.total_length) < maxLength
       );
 
       filteredBeatmaps = beatmaps.filter(

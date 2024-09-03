@@ -20,12 +20,9 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.17.1",
     "@types/ws": "^8.5.12",
     "axios": "^1.7.5",
     "bancho.js": "^0.10.1",
-    "canvas": "^2.11.2",
-    "cohere-ai": "^7.12.1",
     "discord.js": "^14.15.3",
     "discordbotts": "file:",
     "dotenv": "^16.4.5",
