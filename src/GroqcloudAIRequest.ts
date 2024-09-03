@@ -56,8 +56,8 @@ class GroqCloudAIRequest {
         model: "llama3-70b-8192",
       });
       
+      console.error("CURRENT GROQ ACCOUNT INDEX: ", this.currentAccoutIndex);
       this.currentAccoutIndex++
-      console.error("CURRENT ACCOUNT INDEX: ", this.currentAccoutIndex);
 
       if (!completion) return null;
 
