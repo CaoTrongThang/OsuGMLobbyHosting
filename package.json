@@ -1,0 +1,37 @@
+{
+  "name": "discordbotts",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "postinstall": "npm run build",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/irc": "^0.5.4",
+    "@types/lodash": "^4.17.7",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.17.1",
+    "@types/ws": "^8.5.12",
+    "axios": "^1.7.5",
+    "bancho.js": "^0.10.1",
+    "canvas": "^2.11.2",
+    "cohere-ai": "^7.12.1",
+    "discord.js": "^14.15.3",
+    "discordbotts": "file:",
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^0.6.1",
+    "irc": "^0.5.2",
+    "lodash": "^4.17.21",
+    "mongodb": "^6.8.0"
+  }
+}
