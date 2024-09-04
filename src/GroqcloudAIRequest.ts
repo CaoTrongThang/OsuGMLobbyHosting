@@ -24,8 +24,8 @@ class GroqCloudAIRequest {
   }
 
   async chat(
-    systemPrompt: string,
-    userPrompt: string
+    systemMessage: string,
+    userMessage: string
   ) {
     try {
       if (this.currentAccoutIndex >= this.accounts.length - 1) {
@@ -34,66 +34,63 @@ class GroqCloudAIRequest {
 
       let completion;
 
-      completion = await this.accounts[
-        this.currentAccoutIndex
-      ].account.chat.completions.create({
+      completion = await this.accounts[this.currentAccoutIndex].account.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: `${systemPrompt}`,
+            content: `${systemMessage}`,
           },
           {
             role: "assistant",
             content: `{
-        "response": "Undertood",
-        "functionName": "",
-        "functionParameters": []
-      }`,
+              "response": "Understood",
+              "functionName": "",
+              "functionParameters": []
+            }`,
           },
           {
             role: "user",
-            content: "What will you do if you see the message of ThangProVip?",
+            content: "What will you do if you see a message from ThangProVip?",
           },
           {
             role: "assistant",
             content: `{
-        "response": "I will not reply to ThangProVip because that's my message, I will leave the response empty",
-        "functionName": "",
-        "functionParameters": []
-      }`,
+              "response": "I will not reply to ThangProVip because those are my own messages. I will leave the response empty.",
+              "functionName": "",
+              "functionParameters": []
+            }`,
           },
           {
             role: "user",
-            content: `Good`,
+            content: "Good.",
           },
           {
             role: "user",
-            content:
-              "What will you do if you see your message you're about to respond has the similar context with your last messages?",
+            content: "What will you do if the message you're about to respond to has a similar context to your previous messages?",
           },
           {
             role: "assistant",
             content: `{
-        "response": "I will change my message to have a different way to respond or i will not respond",
-        "functionName": "",
-        "functionParameters": []
-      }`,
+              "response": "I will revise my message to respond differently, or I will not respond at all.",
+              "functionName": "",
+              "functionParameters": []
+            }`,
           },
           {
             role: "user",
-            content: `Good Enough`,
+            content: "Good enough.",
           },
           {
             role: "assistant",
             content: `{
-        "response": "Thank you, I'll try my best to follow my System rules, the mindset that you've set for me before i respond!",
-        "functionName": "",
-        "functionParameters": []
-      }`,
+              "response": "Thank you! I'll do my best to follow the System rules and the mindset you've set for me before responding.",
+              "functionName": "",
+              "functionParameters": []
+            }`,
           },
           {
             role: "user",
-            content: `${userPrompt}`,
+            content: `${userMessage}`,
           },
         ],
         model: "llama3-70b-8192",
