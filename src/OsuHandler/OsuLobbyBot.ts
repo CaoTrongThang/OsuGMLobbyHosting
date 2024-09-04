@@ -142,26 +142,26 @@ class OsuLobbyBot {
 
   // Command definitions
   commands = {
-    help: "//Use it to get all the commands for players",
-    changeMode: "(player_name: string) //Switch the lobby's mode between 'Host Rotate' and 'Auto Map Pick'",
-    skipMap: "(player_name: string) //Vote to skip the current map",
-    skipHost: "(player_name: string) //Vote to skip the current host",
-    abortMatch: "(player_name: string) //Vote to abort the current match",
-    startMatch: "(player_name: string) //Vote to start the match",
-    getTimeLeft: "//Get the remaining time for the current match if in progress",
+    rhelp: "//Use it to get all the commands for players",
+    changemode: "(player_name: string) //Switch the lobby's mode between 'Host Rotate' and 'Auto Map Pick'",
+    skipmap: "(player_name: string) //Vote to skip the current map",
+    skiphost: "(player_name: string) //Vote to skip the current host",
+    abortmatch: "(player_name: string) //Vote to abort the current match",
+    startmatch: "(player_name: string) //Vote to start the match",
+    timeleft: "//Get the remaining time for the current match if in progress",
   };
 
   // System function definitions
   systemFunctions = {
-    kickPlayer: "Kick a player from the lobby. Parameters: player_name: string",
-    movePlayerToSlot: "Move a player to a specific slot (1-16). Parameters: player_name: string, slot: number",
-    scheduleMatchStart: "Start the match after a specified number of seconds. Typically used in Auto Map Pick mode when at least half the players are ready. Parameters: seconds: number",
+    kickplayer: "(player_name: string) //Kick a player from the lobby.",
+    moveplayertoslot: "(player_name: string, slot: number) //Move a player to a specific slot (1-16).",
+    schedulematchstart: "(seconds: number) //Start the match after a specified number of seconds. Typically used in Auto Map Pick mode when at least half the players are ready.",
   };
 
   // Admin function definitions
   adminFunctions = {
-    closeLobby: "Close the lobby",
-    kickPlayer: "Kick a player from the lobby. Parameters: player_name: string",
+    closelobby: "Close the lobby",
+    kickplayer: "(player_name: string) //Kick a player from the lobby.",
   };
 
   // Match status

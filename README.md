@@ -12,17 +12,18 @@ if you want a full in depth installation guide and documentation, make sure to c
 ### Player Commands 
 
 - **`rhelp`**: Displays all available commands for players.
-- **`votechangemode`**: Switches the lobby's mode between "Host Rotate" and "Random Map".
-- **`voteskipmap`**: Skips the current map.
-- **`voteskiphost`**: Skips the current host.
-- **`voteabortmatch`**: Aborts the current match.
-- **`votestartmatch`**: Starts the match.
+- **`changemode`**: Switches the lobby's mode between "Host Rotate" and "Random Map".
+- **`skipmap`**: Skips the current map.
+- **`skiphost`**: Skips the current host.
+- **`abortmatch`**: Aborts the current match.
+- **`startmatch`**: Starts the match.
 - **`timeleft`**: Displays the time left in the current match, if it's in progress.
 
 ### System Functions (For the AI to use)
 
 - **`kickplayer`**: Kicks a player from the lobby.
 - **`moveplayertoslot`**: Moves a player to a specific slot (1-16).
+- **`schedulematchstart`**: Start the match after a specified number of seconds. Typically used in Auto Map Pick mode when at least half the players are ready.
 
 ### Admin Functions
 
