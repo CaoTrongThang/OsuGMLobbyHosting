@@ -1,6 +1,8 @@
 //TODO CHECK IF A HOST PICK DT, REMOVE IT OR THE MAP IS TOO EASY THEN DT IT
 //TODO MAKE BAN FUNCTION
 
+//TODO KHI THAY ĐỔI ĐỘ KHÓ, CHECK NẾU MAP HIỆN TẠI CHƯA ĐƯỢC CHƠI VÀ ĐÁP ỨNG ĐIỀU KIỆN CỦA ĐỘ KHÓ VỪA ĐỔI THÌ VẪN GIỮ NGUYÊN MAP
+
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -542,14 +544,11 @@ class OsuLobbyBot {
 
   async changeLobbyName(noPlayer?: boolean) {
     if (this.osuChannel) {
-
-
-      
       if (noPlayer) {
         this.currentMapMinDif = 0;
         this.currentMapMaxDif = 0;
         let lobbyName = this.getLobbyName();
-      if (this.lastLobbyName == lobbyName) return;
+        if (this.lastLobbyName == lobbyName) return;
         await this.osuChannel.lobby.setName(lobbyName);
         this.lastLobbyName = lobbyName;
         return;
@@ -559,7 +558,6 @@ class OsuLobbyBot {
       if (this.lastLobbyName == lobbyName) return;
       await this.osuChannel.lobby.setName(lobbyName);
       this.lastLobbyName = lobbyName;
-
     }
   }
 
@@ -584,6 +582,14 @@ class OsuLobbyBot {
     }
 
     if (ranks.length == 0) {
+      if (
+        this.osuChannel.lobby.beatmapId != 75 &&
+        this.currentMapMinDif == 0 &&
+        this.currentMapMaxDif == 0
+      ) {
+        console.log("Changing beatmap when there's no players in room!!!!");
+        await this.autoMapPick();
+      }
       return;
     }
 
@@ -626,9 +632,10 @@ class OsuLobbyBot {
       this.lastMapMaxDif = this.currentMapMaxDif;
       this.currentMapMinDif = min;
       this.currentMapMaxDif = max;
+
+      await this.autoMapPick();
       await this.changeLobbyName();
       await this.chatWithAI("Change Difficulty Based On Users Rank", true);
-      await this.autoMapPick();
     }
   }
 
@@ -1234,7 +1241,9 @@ class OsuLobbyBot {
             }
             return `- (${utils.formattedDate(
               chat.timestamp
-            )}) Sytem's Message, Shouldn't response, leave the fields empty | ${chat.message}`;
+            )}) Sytem's Message, Shouldn't response, leave the fields empty | ${
+              chat.message
+            }`;
           }
 
           if (chat.playerName == "ThangProVip") {
@@ -1277,10 +1286,7 @@ class OsuLobbyBot {
   }
 
   //This function will be updated using setInterval, it'll send the chat history of the latest 100 message to the cohereAI to get the response, and send the response to the channel or maybe use it to execute some function in the future
-  async chatWithAI(
-    type: ChatWithAIType,
-    instantly : boolean = false,
-  ) {
+  async chatWithAI(type: ChatWithAIType, instantly: boolean = false) {
     if (this.lobbyPlayers.length == 0) return;
 
     if (instantly) {
@@ -1290,10 +1296,9 @@ class OsuLobbyBot {
     if (this.canChatWithAI == false) return;
     this.canChatWithAI = false;
 
-      setTimeout(() => {
-        this.canChatWithAI = true;
-      }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
-    
+    setTimeout(() => {
+      this.canChatWithAI = true;
+    }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
 
     if (type == "Normal Chat Based On Chat History") {
       if (!this.playersChatHistory) return;
@@ -1467,7 +1472,7 @@ ${playerChatHistory}`;
             if (playerS) {
               playerScoreStr += `- Match Result Of ${x.playerName} : Score ${
                 x.score
-              } - Mods ${this.getMods(Number(playerS[0].enabled_mods))
+              } - Mods ${playerS[0].enabled_mods ? this.getMods(Number(playerS[0].enabled_mods)) :" "}
                 .map((x) => x.shortMod)
                 .join(",")} - Accuracy ${this.calculateAccuracy(
                 playerS[0]
