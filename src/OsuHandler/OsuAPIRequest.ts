@@ -54,6 +54,7 @@ export type Beatmap = {
 class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
+  beatmapGetCounter = 0;
   async getRandomBeatmap(
     minDifficulty: number,
     maxDifficulty: number,
@@ -62,6 +63,9 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
+      if(this.beatmapGetCounter > 10){
+        this.beatmapGetCounter = 0
+      }
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
 
       const response = await axios.get(OSU_API_URL, {
@@ -75,22 +79,31 @@ class OsuAPIRequest {
       let beatmaps: Beatmap[] = response.data;
 
       let filteredBeatmaps;
-
-      filteredBeatmaps = beatmaps.filter(
-        (b) => Number(b.playcount) >= 10000 && Number(b.total_length) <= maxLength
-      );
-
-      filteredBeatmaps = beatmaps.filter(
-        (b) =>
-          Number(b.difficultyrating) >= minDifficulty &&
-          Number(b.difficultyrating) <= maxDifficulty &&
-          Number(b.diff_approach) > ar &&
-          !b.title.toLowerCase().includes("cut ver")
-          
-      );
-
-
-      return filteredBeatmaps;
+      if (this.beatmapGetCounter <= 10) {
+        filteredBeatmaps = beatmaps.filter(
+          (b) =>
+            Number(b.playcount) >= 5000 &&
+            Number(b.total_length) <= maxLength &&
+            Number(b.difficultyrating) >= minDifficulty &&
+            Number(b.difficultyrating) <= maxDifficulty &&
+            Number(b.diff_approach) > ar &&
+            !b.title.toLowerCase().includes("cut ver") &&
+            !b.title.toLowerCase().includes("tv size")
+        );
+        this.beatmapGetCounter++;
+        return filteredBeatmaps;
+      } else {
+        filteredBeatmaps = beatmaps.filter(
+          (b) =>
+            Number(b.playcount) >= 5000 &&
+            Number(b.total_length) <= maxLength &&
+            Number(b.difficultyrating) >= minDifficulty &&
+            Number(b.difficultyrating) <= maxDifficulty &&
+            Number(b.diff_approach) > ar
+        );
+        this.beatmapGetCounter++;
+        return filteredBeatmaps;
+      }
     } catch (error) {
       console.error("Error fetching beatmaps:", error);
       return [];
