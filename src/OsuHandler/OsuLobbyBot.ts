@@ -1136,9 +1136,9 @@ class OsuLobbyBot {
         Number(this.currentBeatmap?.total_length)
       )} - ${this.currentBeatmap?.bpm} BPM - ${Number(
         this.currentBeatmap?.diff_approach
-      )} - ${Number(
+      )} AR- ${Number(
         this.currentBeatmap?.diff_size
-      )}CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapToRepick?.beatmapset_id}#osu/${this.lastBeatmapToRepick?.beatmap_id}`})`;
+      )} CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapToRepick?.beatmapset_id}#osu/${this.lastBeatmapToRepick?.beatmap_id}`})`;
 
       if (beatmapStr == "") {
         beatmapStr = "No map is currently in progress";
