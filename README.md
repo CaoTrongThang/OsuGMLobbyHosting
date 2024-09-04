@@ -30,6 +30,7 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 
 - **`kickplayer`**: Kicks a player from the lobby.
 - **`moveplayertoslot`**: Moves a player to a specific slot (1-16).
+- **`startmatchafter`**: start match after seconds if half players are ready, usually 30s.
 
 ### Admin Functions
 
@@ -42,8 +43,8 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 Create a `.env` file in the root of your project and configure the following environment variables:
 
 ```env
-GROQ_API_KEYS = "sda1233 1231443fd 12314gv 412312 5fsdfd" //Should create at least 4 accounts on GROQ to get 4 API keys, i mean if you don't want to pay
-AI_REPLY_COOLDOWN_SECONDS = "12" //About 7 is good, but you might need like 3 APIs, which mean 3 accounts, if you only have 1 (which mean 6k tokens), you should change this to like 20
+HUGGING_FACE_API_KEY = "KEY HERE, MUST BE A PRO VERSION OF HUGGING FACE, or you can try to change the AI and change way the function chatWithAI worth"
+AI_REPLY_COOLDOWN_SECONDS = "7" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
@@ -134,6 +135,7 @@ Ripuli
 Revoken
 You are mine
 CkoCon
+Final_Zelix
 
 ... And some players joined the lobby to play but never gotten to play
 

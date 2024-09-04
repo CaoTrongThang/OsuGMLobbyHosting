@@ -54,7 +54,7 @@ export type Beatmap = {
 class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
-  beatmapGetCounter = 0;
+  beatmapGetCounter = 5;
   async getRandomBeatmap(
     minDifficulty: number,
     maxDifficulty: number,
@@ -63,7 +63,7 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
-      if(this.beatmapGetCounter > 10){
+      if(this.beatmapGetCounter > 5){
         this.beatmapGetCounter = 0
       }
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
@@ -79,7 +79,7 @@ class OsuAPIRequest {
       let beatmaps: Beatmap[] = response.data;
 
       let filteredBeatmaps;
-      if (this.beatmapGetCounter <= 10) {
+      if (this.beatmapGetCounter > 5) {
         filteredBeatmaps = beatmaps.filter(
           (b) =>
             Number(b.playcount) >= 5000 &&
