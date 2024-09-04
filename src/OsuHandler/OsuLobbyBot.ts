@@ -533,10 +533,11 @@ class OsuLobbyBot {
 
   async changeLobbyName() {
     if (this.osuChannel) {
-      if (!(this.currentMapMaxDif && this.currentMapMinDif))
+      if (!(this.currentMapMaxDif && this.currentMapMinDif)) {
         this.currentMapMinDif = 0;
-      this.currentMapMinDif = 0;
-      
+        this.currentMapMaxDif = 0;
+      }
+
       this.lobbyName = `${this.currentMapMinDif.toFixed(
         1
       )}* - ${this.currentMapMaxDif.toFixed(
@@ -599,8 +600,6 @@ class OsuLobbyBot {
       await this.chatWithAI("Change Difficulty Based On Users Rank", 1);
       await this.autoMapPick();
     }
-
-
   }
 
   //Show players commands
