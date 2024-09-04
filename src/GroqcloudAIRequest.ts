@@ -31,7 +31,7 @@ class GroqCloudAIRequest {
     userMessage: string
   ) {
     try {
-      if (this.currentAccoutIndex >= this.accounts.length - 1) {
+      if (this.currentAccoutIndex >= this.accounts.length) {
         this.currentAccoutIndex = 0;
       }
 
@@ -81,7 +81,19 @@ class GroqCloudAIRequest {
           },
           {
             role: "user",
-            content: "Good enough.",
+            content: "Good enough. System messages are message by executing commands, it shows the result of something, you might don't want to respond to that, understand?",
+          },
+          {
+            role: "assistant",
+            content: `{
+              "response": "Understand.",
+              "functionName": "",
+              "functionParameters": []
+            }`,
+          },
+          {
+            role: "user",
+            content: "Good enough. Try to best to follow the rules and execute the right function and right parameter",
           },
           {
             role: "assistant",
