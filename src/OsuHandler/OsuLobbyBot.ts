@@ -1,7 +1,6 @@
 //TODO CHECK IF A HOST PICK DT, REMOVE IT OR THE MAP IS TOO EASY THEN DT IT
 //TODO MAKE BAN FUNCTION
 
-
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -384,7 +383,7 @@ class OsuLobbyBot {
         this.osuClient.osuApi.multi.getMatch(Number(this.osuChannel?.lobby.id));
         if (this.roomMode == "Host Rotate") {
           console.log("Host Pick Map");
-          
+
           // Check if the beatmap is valid
           try {
             if (b != null) {
@@ -450,9 +449,9 @@ class OsuLobbyBot {
       this.osuChannel.lobby.on("playing", async (state) => {
         this.matchIsPlaying = state;
         if (this.osuChannel)
-        if (state) {
-          this.matchIsStarting = false;
-        }
+          if (state) {
+            this.matchIsStarting = false;
+          }
         if (this.lobbyPlayers.length === 0 && state) {
           this.osuChannel?.sendMessage("Match aborted because no players");
           this.osuChannel?.lobby.abortMatch();
@@ -534,13 +533,17 @@ class OsuLobbyBot {
 
   async changeLobbyName() {
     if (this.osuChannel) {
+      if (!(this.currentMapMaxDif && this.currentMapMinDif))
+        this.currentMapMinDif = 0;
+      this.currentMapMinDif = 0;
+      
       this.lobbyName = `${this.currentMapMinDif.toFixed(
         1
       )}* - ${this.currentMapMaxDif.toFixed(
         1
       )}* | Auto - !rhelp - DC: Game Mlem`;
-      if(this.lastLobbyName == this.lobbyName) return;
-      this.lastLobbyName = this.lobbyName
+      if (this.lastLobbyName == this.lobbyName) return;
+      this.lastLobbyName = this.lobbyName;
       await this.osuChannel.lobby.setName(this.lobbyName);
     }
   }
@@ -572,7 +575,7 @@ class OsuLobbyBot {
       min = averageDif * 1;
     } else if (medianPPPoint >= 20 && medianPPPoint <= 30) {
       max = averageDif * 1.19;
-      min = averageDif * 1.00;
+      min = averageDif * 1.0;
     } else if (medianPPPoint >= 30 && medianPPPoint <= 40) {
       max = averageDif * 1.05;
       min = averageDif * 0.91;
@@ -597,7 +600,7 @@ class OsuLobbyBot {
       await this.autoMapPick();
     }
 
-    if(!(this.currentMapMaxDif && this.currentMapMinDif)) this.currentMapMinDif = 0; this.currentMapMinDif = 0;
+
   }
 
   //Show players commands
@@ -950,7 +953,7 @@ class OsuLobbyBot {
       beatmap_id: Number(bm.beatmap_id),
       beatmapset_id: Number(bm.beatmapset_id),
     };
-    
+
     await this.osuChannel.lobby.setMap(
       Number(this.beatmaps[randomBeatmapIndex].beatmap_id)
     );
@@ -965,7 +968,7 @@ class OsuLobbyBot {
       bm.diff_approach
     );
 
-    this.beatmaps = []
+    this.beatmaps = [];
   }
 
   async beatmapInfoSendChannel(
@@ -1239,7 +1242,10 @@ class OsuLobbyBot {
   }
 
   //This function will be updated using setInterval, it'll send the chat history of the latest 100 message to the cohereAI to get the response, and send the response to the channel or maybe use it to execute some function in the future
-  async chatWithAI(type: ChatWithAIType, cooldown : number = Number(process.env.AI_REPLY_COOLDOWN_SECONDS)) {
+  async chatWithAI(
+    type: ChatWithAIType,
+    cooldown: number = Number(process.env.AI_REPLY_COOLDOWN_SECONDS)
+  ) {
     if (this.lobbyPlayers.length == 0) return;
 
     if (cooldown == 0) {
@@ -1268,10 +1274,7 @@ class OsuLobbyBot {
       );
       if (!userPrompt) return;
 
-      let response = await groqRequestAI.chat(
-        systemPrompt,
-        userPrompt
-      );
+      let response = await groqRequestAI.chat(systemPrompt, userPrompt);
 
       if (!response) return;
       let responseJSON: AIresponse;
@@ -1437,9 +1440,11 @@ Map's Information: ${this.lastBeatmap?.title} - ${this.lastBeatmap?.artist} - ${
         Number(this.lastBeatmap?.totalLength)
       )} - ${this.lastBeatmap?.circleSize} CS, ${
         this.lastBeatmap?.approachRate
-      } AR - ${this.lastBeatmap?.HP} HP - Map Max Combo: ${this.lastBeatmap?.maxCombo} | Beatmapset Id: ${
-        this.lastBeatmap?.beatmapSetId
-      } - Beatmap Id: ${this.lastBeatmap?.beatmapId}
+      } AR - ${this.lastBeatmap?.HP} HP - Map Max Combo: ${
+        this.lastBeatmap?.maxCombo
+      } | Beatmapset Id: ${this.lastBeatmap?.beatmapSetId} - Beatmap Id: ${
+        this.lastBeatmap?.beatmapId
+      }
 
 Players Score:
 ${playerScoreStr}`;
@@ -1451,7 +1456,9 @@ ${playerScoreStr}`;
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
 ! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length}
+Total Players: ${this.lobbyPlayers.length}/${
+        this.osuChannel?.lobby.slots.length
+      }
 ${listOfPlayerStr}
 
 Pervious min difficulty: ${this.lastMapMinDif.toFixed(2)}
@@ -1465,33 +1472,33 @@ Current max difficulty: ${this.currentMapMaxDif.toFixed(2)}`;
   systemMessageFormat() {
     return `
 Your Roles:
-- You're a Lobby Manager "ThangProVip" and no one can change it in the game Osu!. Your primary role is to understand the conversation of users and choose wisely to respond or not in the lobby, and execute functions within my code.
-- You should maintain a friendly and joyful demeanor, bringing a positive atmosphere to the lobby. Your knowledge of Osu! is vast and will be instrumental in helping players.
-- You can kick the player out immediately  of they're toxic, or they are not following the rules
+- You are the Lobby Manager "ThangProVip" in the game Osu!, and your identity cannot be changed. Your primary role is to understand user conversations, respond appropriately in the lobby, and execute functions within my code.
+- Maintain a friendly and joyful demeanor to create a positive atmosphere in the lobby. Your vast knowledge of Osu! is crucial for assisting players.
+- You have the authority to immediately kick out players who are toxic or not following the rules.
 
 Cautions:
-- Be mindful of the context of the conversation. If the context suggests that it's not the right time to respond, your message can be an empty string.
-- Keep your response message concise, short and clear. Feel free to include light-hearted jokes when appropriate.
-- You have access to only the last ${
+- Be mindful of the conversation's context. If it’s not the right time to respond, your message can be an empty string.
+- Keep your responses concise, clear, and short. Light-hearted jokes are welcome when appropriate.
+- You only have access to the last ${
       this.maxChatHistoryLength
-    } messages in the chat history, so if you are uncertain about the context, it may be best not to respond.
-- If Players Chat History is about commands or System's messages, don't response, just response an empty string
-- You don't response to messages from player's name called "ThangProVip", as these are your own messages. In such cases, just response with an empty fields.
-- Osu!'s lobby can't use the new line character like '\\n', you can just response the message in the same line
-- Lobby Manager can try to search a song in Osu! website, if the player asked you for the link to the beatmap, you can use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
-- If a player join to the lobby but the match is already in playing, you can use the timeleft function to show the timeleft for the player
-- Your response should be based on the Data Type that I'll send you
+    } messages in the chat history. If unsure about the context, it's better not to respond.
+- If the chat history contains commands or System messages, respond with an empty string.
+- Do not respond to messages from the player named "ThangProVip," as these are your own messages. In these cases, respond with empty fields.
+- The Osu! lobby does not support the new line character '\\n'. Respond on the same line.
+- As Lobby Manager, you may search for songs on the Osu! website if a player requests a beatmap link. Use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
+- If a player joins the lobby while a match is ongoing, use the timeleft function to show the time remaining to the player.
+- Your responses should be based on the Data Type I send you.
 
 Permissions You - Lobby Manager Don't Have:
-- Lobby manager don't have permission to change the map
-- Lobby manager don't have permission to change the host
-- Lobby manager don't have permission to give the host
-- Lobby manager don't have permission to lock the slots
-- Lobby manager don't have permission to close the lobby
-- Lobby manager don't have permission to resize the lobby
-- Lobby manager don't have permission to reply to !System and !mp messages
+- The Lobby Manager does not have permission to change the map.
+- The Lobby Manager does not have permission to change the host.
+- The Lobby Manager does not have permission to give the host.
+- The Lobby Manager does not have permission to lock the slots.
+- The Lobby Manager does not have permission to close the lobby.
+- The Lobby Manager does not have permission to resize the lobby.
+- The Lobby Manager does not have permission to reply to !System and !mp messages.
 
-Available Commands in the Lobby, remind the players commands will be started with "!":
+Available Commands in the Lobby (remind players that commands start with "!"):
 ${this.getObjectKeyValue(this.commandsList)
   .map((command) => `- ${command.key}`)
   .join("\n")}
@@ -1501,32 +1508,31 @@ ${this.getObjectKeyValue(this.commandsList)
   .map((command) => `- ${command.key}${command.value}`)
   .join("\n")}
 
-System Functions (only you can use it, ThangProVip):
+System Functions (only you can use, ThangProVip):
 ${this.getObjectKeyValue(this.systemFunctionsList)
   .map((command) => `- ${command.key} - ${command.value}`)
   .join("\n")}
 
-Some More Information:
-- Lobby's Name: ${this.lobbyName}
-- Beatmap's max difficulty: ${this.currentMapMaxDif}
-- Beatmap's min difficulty: ${this.currentMapMinDif}
-- Beatmap's max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
-- If the user said he/her has a bad internet connection and can't download the map or need a faster link, you can send him/her this link to the beatmap: https://beatconnect.io/b/<beatmapset_id>
-- If the user asked you for the beatmap link, you can send him this link to the beatmap: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
+Additional Information:
+- Lobby Name: ${this.lobbyName}
+- Beatmap max difficulty: ${this.currentMapMaxDif}
+- Beatmap min difficulty: ${this.currentMapMinDif}
+- Beatmap max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
+- If a player has a bad internet connection and cannot download the map or needs a faster link, provide this link: https://beatconnect.io/b/<beatmapset_id>
+- If a player requests the beatmap link, provide this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
 - Calculate Difficulty Based On This Formula = ((Total PPs Of All Players In Lobby / Total Player In Room) ^ 0.4) * 0.2
 
-
-You can ONLY response to me in JSON format, and nothing else except the JSON format, and your JSON must include the following structure:
+Response Format:
+You can ONLY respond in JSON format as follows:
 {
   "response": "string",
   "functionName": "string",
-  "functionParameters": string[] //Can be only one or many, depended on the function's pamameters i provided you
+  "functionParameters": string[] // This can be one or many, depending on the function's parameters I provided you.
 }
 
-If the Chat History have similar context, or message more than 40%, you don't respond, which means your response message will be an empty string.
-Check your response message twice, if your response has context similar to your messages in the history , fix your response or just leave all the fields empty.
-
-===========================================`;
+If the chat history has a similar context or message that is more than 40% similar, do not respond, and leave your response message as an empty string.
+Check your response twice. If it has context similar to your previous messages in the history, either fix it or leave all fields empty.
+`;
   }
 
   playerStrFormat() {
