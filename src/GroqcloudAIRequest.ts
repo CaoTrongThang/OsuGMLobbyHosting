@@ -24,6 +24,8 @@ class GroqCloudAIRequest {
     for (const x of apiKeys) {
       this.accounts.push(new GroqAccount(new Groq({ apiKey: x })));
     }
+    console.log("Total Groqs Account For Requesting: ", this.accounts.length);
+    
   }
 
   async chat(
@@ -31,9 +33,11 @@ class GroqCloudAIRequest {
     userMessage: string
   ) {
     try {
-      if (this.currentAccoutIndex >= this.accounts.length) {
+      this.currentAccoutIndex++;
+      if (this.currentAccoutIndex > this.accounts.length - 1) {
         this.currentAccoutIndex = 0;
       }
+      console.error("CURRENT GROQ ACCOUNT INDEX: ", this.currentAccoutIndex);
 
       let completion;
 
@@ -65,11 +69,7 @@ class GroqCloudAIRequest {
           },
           {
             role: "user",
-            content: "Good.",
-          },
-          {
-            role: "user",
-            content: "What will you do if the message you're about to respond to has a similar context to your previous messages?",
+            content: "Next Question, what will you do if the message you're about to respond to has a similar context to your previous messages?",
           },
           {
             role: "assistant",
@@ -110,9 +110,6 @@ class GroqCloudAIRequest {
         ],
         model: "llama3-70b-8192",
       });
-
-      console.error("CURRENT GROQ ACCOUNT INDEX: ", this.currentAccoutIndex);
-      this.currentAccoutIndex++;
 
       if (!completion) return null;
 

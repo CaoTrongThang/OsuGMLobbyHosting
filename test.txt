@@ -1,0 +1,236 @@
+  functionParameters: []
+}
+false
+ThangProVip: Hey guys, I've adjusted the room difficulty to 6.81 - 7.86 based on the median of our Osu! ranks. Feel free to get ready when you're comfortable!       
+======================= USER PROMPT =======================
+
+Here's the Data "ThangProVip", try your best, remember the rules when you respond:
+
+Data Type: Normal Chat Based On Chat History
+Current Host Player's Name: No Host
+Discord Link: https://discord.gg/game-mlem-686218489396068373
+! Empty = this slot is empty
+! Host = this slot is the current host
+Total Players In Slots And Their Information: 2/16
+- 1 | ThangProVip (State: Not Ready) (User's Stats: Rank: #177602 - 97.8% Acc - 51431 Playcount - 100.218 Lv - PP: 3763.66) (Has voted for: No Votes)
+- 2 | Sieu Phan Dong (State: Not Ready) (User's Stats: Rank: #739 - 99.0% Acc - 256116 Playcount - 104.734 Lv - PP: 13358.9) (Has voted for: No Votes)
+- 3 | [Empty]
+- 4 | [Empty]
+- 5 | [Empty]
+- 6 | [Empty]
+- 7 | [Empty]
+- 8 | [Empty]
+- 9 | [Empty]
+- 10 | [Empty]
+- 11 | [Empty]
+- 12 | [Empty]
+- 13 | [Empty]
+- 14 | [Empty]
+- 15 | [Empty]
+- 16 | [Empty]
+
+Is Match Playing: Not Playing
+Lobby's current modes: Auto Map Pick
+Map's Information: Fake - Imy - 5.87554* - 190 BPM - 3:29s - 4 CS, 9.3 AR - 6 HP | Beatmapset Id: 1261105 - Beatmap Id: 2637339
+
+Message History:
+- (18:18:31) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:18:31) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Yuudachi no Ribbon - Ito Kashitaro (5.91*): 230 BPM - 3:45s - 4 CS, 9.2 AR
+- (18:18:55) Player "Sieu Phan Dong" Sent: damn you all
+- (18:18:57) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, no need to be frustrated! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:18:58) Sytem's Message, Shouldn't response | Changed match to size 16
+- (18:18:59) Sytem's Message, Shouldn't response | Room name updated to "6.8* - 7.9* | Auto - !rhelp - DC: Game Mlem"
+- (18:18:59) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! The room's difficulty range has been updated based on the players' ranks. The new range is 6.81 - 
+7.86. Let's get ready to play!
+- (18:19:00) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:19:01) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:19:02) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/3547162 DECO*27 - Chimera feat. Hatsune Miku
+- (18:19:02) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:19:02) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Chimera feat. Hatsune Miku - DECO*27 (7.73*): 212 BPM - 2:44s - 4.2 CS, 9.8 AR
+- (18:19:47) Player "Sieu Phan Dong" Sent: go unalive yourself
+- (18:19:48) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, that's not a nice thing to say. Let's keep the atmosphere positive and respectful in this lobby. Ready up when you're ready, and don't forget to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:20:59) Player "Sieu Phan Dong" Sent: your parents are ashamed of your birth
+- (18:21:00) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, I understand that you might be frustrated, but that's not a nice thing to say. Let's keep the atmosphere positive and respectful in this lobby. Remember, we're all here to have fun and play Osu! together!
+- (18:21:07) Player "Sieu Phan Dong" Sent: useless
+- (18:21:08) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, I understand that you're frustrated, but let's keep the atmosphere positive and respectful in this lobby. Remember, we're all here to have fun and play Osu! together!
+- (18:21:29) Player "Sieu Phan Dong" Sent: go die in a ditch somewhere
+- (18:21:30) Lobby Manager "ThangProVip" (You) Sent: Sieu Phan Dong, I'm afraid I'll have to kick you from the lobby due to your toxic behavior. Let's keep the atmosphere positive and respectful in this lobby.
+- (18:21:32) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:32) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:44) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:21:45) Lobby Manager "ThangProVip" (You) Sent: I kicked Sieu Phan Dong from the lobby due to their toxic behavior, and he has now rejoined the lobby. Please respect each other and let's focus on playing Osu! together! Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:47) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:22:09) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:22:25) Player "Sieu Phan Dong" Sent: ok
+- (18:22:26) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:22:28) Sytem's Message, Shouldn't response | Room name updated to "6.8* - 7.9* | Auto - !rhelp - DC: Game Mlem"
+- (18:22:28) (Lastest Message) Lobby Manager "ThangProVip" (You) Sent: Hey guys, I've adjusted the room difficulty to 6.81 - 7.86 based on the median of our Osu! ranks. Feel free to get ready when you're comfortable!
+CURRENT GROQ ACCOUNT INDEX:  6
+ThangProVip: !mp map 2890902 0 vm5isvhpqd
+{
+  response: "Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.",
+  functionName: '',
+  functionParameters: []
+}
+false
+ThangProVip: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+undefined: Changed beatmap to https://osu.ppy.sh/b/2890902 II-L - VOSTOK-6
+undefined: Changed match mode to Osu
+======================= USER PROMPT =======================
+
+Here's the Data "ThangProVip", try your best, remember the rules when you respond:
+
+Data Type: Normal Chat Based On Chat History
+Current Host Player's Name: No Host
+Discord Link: https://discord.gg/game-mlem-686218489396068373
+! Empty = this slot is empty
+! Host = this slot is the current host
+Total Players In Slots And Their Information: 2/16
+- 1 | ThangProVip (State: Not Ready) (User's Stats: Rank: #177602 - 97.8% Acc - 51431 Playcount - 100.218 Lv - PP: 3763.66) (Has voted for: No Votes)
+- 2 | Sieu Phan Dong (State: Not Ready) (User's Stats: Rank: #739 - 99.0% Acc - 256116 Playcount - 104.734 Lv - PP: 13358.9) (Has voted for: No Votes)
+- 3 | [Empty]
+- 4 | [Empty]
+- 5 | [Empty]
+- 6 | [Empty]
+- 7 | [Empty]
+- 8 | [Empty]
+- 9 | [Empty]
+- 10 | [Empty]
+- 11 | [Empty]
+- 12 | [Empty]
+- 13 | [Empty]
+- 14 | [Empty]
+- 15 | [Empty]
+- 16 | [Empty]
+
+Is Match Playing: Not Playing
+Lobby's current modes: Auto Map Pick
+Map's Information: VOSTOK-6 - II-L - 7.41212* - 170 BPM - 2:50s - 4.2 CS, 9.4 AR - 5 HP | Beatmapset Id: 1380791 - Beatmap Id: 2890902
+
+Message History:
+- (18:18:57) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, no need to be frustrated! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:18:58) Sytem's Message, Shouldn't response | Changed match to size 16
+- (18:18:59) Sytem's Message, Shouldn't response | Room name updated to "6.8* - 7.9* | Auto - !rhelp - DC: Game Mlem"
+- (18:18:59) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! The room's difficulty range has been updated based on the players' ranks. The new range is 6.81 - 
+7.86. Let's get ready to play!
+- (18:19:00) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:19:01) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:19:02) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/3547162 DECO*27 - Chimera feat. Hatsune Miku
+- (18:19:02) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:19:02) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Chimera feat. Hatsune Miku - DECO*27 (7.73*): 212 BPM - 2:44s - 4.2 CS, 9.8 AR
+- (18:19:47) Player "Sieu Phan Dong" Sent: go unalive yourself
+- (18:19:48) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, that's not a nice thing to say. Let's keep the atmosphere positive and respectful in this lobby. Ready up when you're ready, and don't forget to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:20:59) Player "Sieu Phan Dong" Sent: your parents are ashamed of your birth
+- (18:21:00) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, I understand that you might be frustrated, but that's not a nice thing to say. Let's keep the atmosphere positive and respectful in this lobby. Remember, we're all here to have fun and play Osu! together!
+- (18:21:07) Player "Sieu Phan Dong" Sent: useless
+- (18:21:08) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, I understand that you're frustrated, but let's keep the atmosphere positive and respectful in this lobby. Remember, we're all here to have fun and play Osu! together!
+- (18:21:30) Lobby Manager "ThangProVip" (You) Sent: Sieu Phan Dong, I'm afraid I'll have to kick you from the lobby due to your toxic behavior. Let's keep the atmosphere positive and respectful in this lobby.
+- (18:21:32) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:32) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:44) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:21:45) Lobby Manager "ThangProVip" (You) Sent: I kicked Sieu Phan Dong from the lobby due to their toxic behavior, and he has now rejoined the lobby. Please respect each other and let's focus on playing Osu! together! Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:47) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+phere positive and respectful in this lobby.
+- (18:21:32) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:32) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:44) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:21:45) Lobby Manager "ThangProVip" (You) Sent: I kicked Sieu Phan Dong from the lobby due to their toxic behavior, and he has now rejoined the lobby. Please respect each other and let's focus on playing Osu! together! Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:47) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:21:32) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:44) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:21:45) Lobby Manager "ThangProVip" (You) Sent: I kicked Sieu Phan Dong from the lobby due to their toxic behavior, and he has now rejoined the lobby. Please respect each other and let's focus on playing Osu! together! Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:47) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+spect each other and let's focus on playing Osu! together! Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:47) Sytem's Message, Shouldn't response | Sieu Phan Dong left the game.
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:21:47) Sytem's Message, Shouldn't response | Kicked Sieu Phan Dong from the match
+- (18:21:58) Sytem's Message, Shouldn't response | Room name updated to "5.4* - 6.4* | Auto - !rhelp - DC: Game Mlem"
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey everyone! To ensure a positive atmosphere, let's focus on playing Osu! together. Remember to use !rhelp for 
+available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:21:58) Lobby Manager "ThangProVip" (You) Sent: Hey players! The room difficulties have been adjusted based on the current players' ranks. The new min difficulty is 5.39 and the new max difficulty is 6.41. Let's get ready to play!
+- (18:22:01) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2637339 Imy - Fake
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:22:09) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:22:01) Sytem's Message, Shouldn't response | Changed match mode to Osu
+- (18:22:01) Lobby Manager "ThangProVip" (You) Sent: Picked Map: Fake - Imy (5.88*): 190 BPM - 3:29s - 4 CS, 9.3 AR
+- (18:22:09) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:22:09) Sytem's Message, Shouldn't response | Sieu Phan Dong joined in slot 2.
+- (18:22:25) Player "Sieu Phan Dong" Sent: ok
+- (18:22:26) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+mands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:22:28) Sytem's Message, Shouldn't response | Room name updated to "6.8* - 7.9* | Auto - !rhelp - DC: Game Mlem"
+- (18:22:28) Sytem's Message, Shouldn't response | Room name updated to "6.8* - 7.9* | Auto - !rhelp - DC: Game Mlem"
+- (18:22:28) Lobby Manager "ThangProVip" (You) Sent: Hey guys, I've adjusted the room difficulty to 6.81 - 7.86 based on the median of our Osu! ranks. Feel free to get ready when you're comfortable!
+- (18:22:28) Lobby Manager "ThangProVip" (You) Sent: Hey guys, I've adjusted the room difficulty to 6.81 - 7.86 based on the median of our Osu! ranks. Feel free to get ready when you're comfortable!
+- (18:22:29) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+et ready when you're comfortable!
+- (18:22:29) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:22:29) Lobby Manager "ThangProVip" (You) Sent: Hey Sieu Phan Dong, welcome back! Let's focus on playing Osu! together. Remember to use !rhelp for available commands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:22:31) (Lastest Message) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2890902 II-L - VOSTOK-6
+mands. Join our Discord server at https://discord.gg/game-mlem-686218489396068373 for more info.
+- (18:22:31) (Lastest Message) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2890902 II-L - VOSTOK-6
+CURRENT GROQ ACCOUNT INDEX:  0
+- (18:22:31) (Lastest Message) Sytem's Message, Shouldn't response | Changed beatmap to https://osu.ppy.sh/b/2890902 II-L - VOSTOK-6
+CURRENT GROQ ACCOUNT INDEX:  0
+ThangProVip: Picked Map: VOSTOK-6 - II-L (7.41*): 170 BPM - 2:50s - 4.2 CS, 9.4 AR
+CURRENT GROQ ACCOUNT INDEX:  0
+ThangProVip: Picked Map: VOSTOK-6 - II-L (7.41*): 170 BPM - 2:50s - 4.2 CS, 9.4 AR
+ThangProVip: Picked Map: VOSTOK-6 - II-L (7.41*): 170 BPM - 2:50s - 4.2 CS, 9.4 AR
+Picked Map: VOSTOK-6 - II-L (7.41*): 170 BPM - 2:50s - 4.2 CS, 9.4 AR
+{
+  response: "Hey everyone! The room's difficulty range has been updated based on the players' ranks. The new range is 6.81 - 7.86. Let's get ready to play!",        
+  functionName: '',
+  functionParameters: []
+}
+false
+ThangProVip: Hey everyone! The room's difficulty range has been updated based on the players' ranks. The new range is 6.81 - 7.86. Let's get ready to play!
+DISCONNECTING WITH LOBBY...
+Terminate batch job (Y/N)?
+^C
+PS D:\JavascriptProjects\OsuGMLobbyHosting>
+fwd-i-search: _
+                                            ^C
+PS D:\JavascriptProjects\OsuGMLobbyHosting>

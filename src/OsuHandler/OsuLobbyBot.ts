@@ -106,6 +106,8 @@ class OsuLobbyBot {
       "kick a player from the lobby, with the function's parameters: playerName: string",
     moveplayertoslot:
       "move a player to a specific slot from 1 to 16, with the function's parameters: playerName: string, slot: number",
+    startmatchafter:
+      "start the match in how many seconds, usually 30 seconds, if the lobby is in mode Auto Map Pick and has 3 players or more, and half of them are in state Ready, you should use this function, with the function's parameter is: seconds: String",
   };
 
   adminFunctionList = {
@@ -152,7 +154,6 @@ class OsuLobbyBot {
   matchIsPlaying: boolean = false;
   matchIsStarting = false;
 
-  lobbyName = "";
   lastLobbyName = "";
 
   voteData: VoteData[] = [];
@@ -190,9 +191,13 @@ class OsuLobbyBot {
       if (await this.areAllPlayersReady()) {
         this.startMatchTimer();
       }
-    }, 1000 * 7);
+    }, 1000 * 10);
 
     setInterval(async () => {
+      if (this.lobbyPlayers.length == 0) {
+        await this.changeLobbyName();
+        return;
+      }
       await this.changeDifficultyBaseOnPlayersRank();
     }, 1000 * 30);
 
@@ -212,9 +217,11 @@ class OsuLobbyBot {
   }
 
   async createAndHandleLobby() {
-    this.lobbyName = `${this.currentMapMinDif}* - ${this.currentMapMaxDif}* | Auto - !rhelp - DC: Game Mlem`;
     try {
-      this.osuChannel = await this.osuClient.createLobby(this.lobbyName, false);
+      this.osuChannel = await this.osuClient.createLobby(
+        this.getLobbyName(),
+        false
+      );
 
       if (!this.osuChannel) {
         this.closeLobby();
@@ -242,12 +249,12 @@ class OsuLobbyBot {
           }
         }
 
-        if (this.roomMode == "Auto Map Pick") {
-          if (this.lobbyPlayers.length >= 4) {
-            if (await this.areAllPlayersReady())
-              await this.startMatchTimer(this.startMatchTimeout);
-          }
-        }
+        // if (this.roomMode == "Auto Map Pick") {
+        //   if (this.lobbyPlayers.length >= 4) {
+        //     if (await this.areAllPlayersReady())
+        //       await this.startMatchTimer(this.startMatchTimeout);
+        //   }
+        // }
       });
 
       this.osuChannel.lobby.on("playerLeft", async (lobbyPlayer) => {
@@ -353,15 +360,14 @@ class OsuLobbyBot {
             await this.hostRotate();
           }
           this.matchStartTime = null;
-          setTimeout(async () => {
-            if (!this.osuChannel) return;
-            try {
-              await this.chatWithAI("Match Finished", 2);
-            } catch (e) {
-              console.error("ERROR: ", e);
-              this.closeLobby();
-            }
-          }, 1000 * 2);
+
+          if (!this.osuChannel) return;
+          try {
+            await this.chatWithAI("Match Finished", true);
+          } catch (e) {
+            console.error("ERROR: ", e);
+            this.closeLobby();
+          }
         } catch (e) {
           console.error("ERROR: ", e);
           this.closeLobby();
@@ -381,11 +387,11 @@ class OsuLobbyBot {
 
       this.osuChannel.lobby.on("beatmap", async (b) => {
         this.osuClient.osuApi.multi.getMatch(Number(this.osuChannel?.lobby.id));
-        if (this.roomMode == "Host Rotate") {
-          console.log("Host Pick Map");
+        try {
+          if (this.roomMode == "Host Rotate") {
+            console.log("Host Pick Map");
 
-          // Check if the beatmap is valid
-          try {
+            // Check if the beatmap is valid
             if (b != null) {
               if (
                 b.difficultyRating > this.currentMapMaxDif ||
@@ -433,10 +439,12 @@ class OsuLobbyBot {
                 );
               }
             }
-          } catch (e) {
-            await this.closeLobby();
-            console.log(e);
+          } else {
+            this.lastBeatmap = b;
           }
+        } catch (e) {
+          await this.closeLobby();
+          console.log(e);
         }
       });
 
@@ -531,22 +539,25 @@ class OsuLobbyBot {
     }
   }
 
-  async changeLobbyName() {
+  async changeLobbyName(noPlayer?: boolean) {
     if (this.osuChannel) {
-      if (!(this.currentMapMaxDif && this.currentMapMinDif)) {
-        this.currentMapMinDif = 0;
-        this.currentMapMaxDif = 0;
-      }
+      let lobbyName = this.getLobbyName();
+      if (this.lastLobbyName == lobbyName) return;
 
-      this.lobbyName = `${this.currentMapMinDif.toFixed(
-        1
-      )}* - ${this.currentMapMaxDif.toFixed(
-        1
-      )}* | Auto - !rhelp - DC: Game Mlem`;
-      if (this.lastLobbyName == this.lobbyName) return;
-      this.lastLobbyName = this.lobbyName;
-      await this.osuChannel.lobby.setName(this.lobbyName);
+      if (noPlayer) {
+        this.currentMapMinDif = 0;
+        this.currentMapMinDif = 0;
+        await this.osuChannel.lobby.setName(lobbyName);
+      }
+      await this.osuChannel.lobby.setName(lobbyName);
+      this.lastLobbyName = lobbyName;
     }
+  }
+
+  getLobbyName() {
+    return `${this.currentMapMinDif.toFixed(
+      1
+    )}* - ${this.currentMapMaxDif.toFixed(1)}* | Auto - !rhelp - DC: Game Mlem`;
   }
 
   async changeDifficultyBaseOnPlayersRank() {
@@ -563,10 +574,10 @@ class OsuLobbyBot {
       }
     }
 
-    if(ranks.length == 0){
+    if (ranks.length == 0) {
       return;
     }
-    
+
     let medianPPPoint = Math.pow(this.getMedian(ranks), 0.4);
     let averageDif = medianPPPoint * 0.2;
 
@@ -595,8 +606,8 @@ class OsuLobbyBot {
       max = averageDif * 0.85;
       min = averageDif * 0.75;
     }
-    
-    if(!min && !max){
+
+    if (!min && !max) {
       this.currentMapMinDif = 0;
       this.currentMapMaxDif = 0;
       return;
@@ -607,7 +618,7 @@ class OsuLobbyBot {
       this.currentMapMinDif = min;
       this.currentMapMaxDif = max;
       await this.changeLobbyName();
-      await this.chatWithAI("Change Difficulty Based On Users Rank", 1);
+      await this.chatWithAI("Change Difficulty Based On Users Rank", true);
       await this.autoMapPick();
     }
   }
@@ -645,9 +656,9 @@ class OsuLobbyBot {
   ) {
     if (!this.osuChannel) return;
 
-    if (this.matchIsPlaying) {
+    if (this.matchIsPlaying && voteT != "Start Match") {
       await this.osuChannel.sendMessage(
-        "Can't host when the match is in playing!"
+        "Can't Vote when the match is in playing!"
       );
       return;
     }
@@ -1053,6 +1064,12 @@ class OsuLobbyBot {
     this.matchIsStarting = true;
   }
 
+  startmatchafter(seconds: String) {
+    try {
+      this.startMatchTimer(Number(seconds));
+    } catch (e) {}
+  }
+
   async matchAbortTimer() {
     await this.osuChannel?.lobby.abortTimer();
     this.matchIsStarting = false;
@@ -1117,9 +1134,11 @@ class OsuLobbyBot {
         this.currentBeatmap?.difficultyrating
       ).toFixed(2)}*) - ${this.currentBeatmap?.artist} - ${utils.formatSeconds(
         Number(this.currentBeatmap?.total_length)
-      )} - ${
-        this.currentBeatmap?.bpm
-      } BPM - ${Number(this.currentBeatmap?.diff_approach)} - ${Number(this.currentBeatmap?.diff_size)}CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapToRepick?.beatmapset_id}#osu/${this.lastBeatmapToRepick?.beatmap_id}`})`;
+      )} - ${this.currentBeatmap?.bpm} BPM - ${Number(
+        this.currentBeatmap?.diff_approach
+      )} - ${Number(
+        this.currentBeatmap?.diff_size
+      )}CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapToRepick?.beatmapset_id}#osu/${this.lastBeatmapToRepick?.beatmap_id}`})`;
 
       if (beatmapStr == "") {
         beatmapStr = "No map is currently in progress";
@@ -1144,7 +1163,7 @@ class OsuLobbyBot {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle(this.lobbyName)
+        .setTitle(this.getLobbyName())
         .addFields(
           {
             name: `**Players** (${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length})`,
@@ -1200,15 +1219,13 @@ class OsuLobbyBot {
             if (index == this.getChatHistory(true).length - 1) {
               return `- (${utils.formattedDate(
                 chat.timestamp
-              )}) (Lastest Message) Sytem's Message, Don't response, Leave All The Fields Empty | ${
+              )}) (Lastest Message) Sytem's Message, Shouldn't response | ${
                 chat.message
               }`;
             }
             return `- (${utils.formattedDate(
               chat.timestamp
-            )}) Sytem's Message, Don't response, Leave All The Fields Empty | ${
-              chat.message
-            }`;
+            )}) Sytem's Message, Shouldn't response | ${chat.message}`;
           }
 
           if (chat.playerName == "ThangProVip") {
@@ -1253,18 +1270,21 @@ class OsuLobbyBot {
   //This function will be updated using setInterval, it'll send the chat history of the latest 100 message to the cohereAI to get the response, and send the response to the channel or maybe use it to execute some function in the future
   async chatWithAI(
     type: ChatWithAIType,
-    cooldown: number = Number(process.env.AI_REPLY_COOLDOWN_SECONDS)
+    instantly : boolean = false,
   ) {
     if (this.lobbyPlayers.length == 0) return;
 
-    if (cooldown == 0) {
+    if (instantly) {
       this.canChatWithAI = true;
     }
+
     if (this.canChatWithAI == false) return;
     this.canChatWithAI = false;
-    setTimeout(() => {
-      this.canChatWithAI = true;
-    }, 1000 * cooldown);
+
+      setTimeout(() => {
+        this.canChatWithAI = true;
+      }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
+    
 
     if (type == "Normal Chat Based On Chat History") {
       if (!this.playersChatHistory) return;
@@ -1281,6 +1301,11 @@ class OsuLobbyBot {
         listOfPlayerStr,
         playerChatHistory
       );
+
+      console.log(
+        `======================= USER PROMPT =======================\n${userPrompt}`
+      );
+
       if (!userPrompt) return;
 
       let response = await groqRequestAI.chat(systemPrompt, userPrompt);
@@ -1293,9 +1318,24 @@ class OsuLobbyBot {
         console.log(e);
         return;
       }
+
       if (!responseJSON) return;
 
       console.log(responseJSON);
+      console.log(
+        responseJSON.response == "" &&
+          responseJSON.functionName == "" &&
+          (responseJSON.functionParameters ||
+            responseJSON.functionParameters.length == 0)
+      );
+
+      if (
+        responseJSON.response == "" &&
+        responseJSON.functionName == "" &&
+        (responseJSON.functionParameters ||
+          responseJSON.functionParameters.length == 0)
+      )
+        return;
 
       if (responseJSON.response) {
         await this.osuChannel?.sendMessage(responseJSON.response);
@@ -1366,7 +1406,6 @@ class OsuLobbyBot {
   ) {
     let userPrompt = ``;
     let playerScoreStr = ``;
-    console.log("TYPE: ", type);
 
     if (type == "Normal Chat Based On Chat History") {
       userPrompt = `
@@ -1377,7 +1416,7 @@ Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
 ! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${
+Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
@@ -1411,7 +1450,7 @@ ${playerChatHistory}`;
             };
           })
           .sort((a, b) => b.score - a.score)
-          .slice(0, 3)) {
+          .slice(0, 5)) {
           if (x) {
             let playerS = await osuAPIRequest.getPlayerRecentPlays(
               x.playerID.toString()
@@ -1434,7 +1473,6 @@ ${playerChatHistory}`;
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
-Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
 ! Host = this slot is the current host
 Total Players: ${this.lobbyPlayers.length}/${
@@ -1460,7 +1498,7 @@ ${playerScoreStr}`;
     }
 
     if (type == "Change Difficulty Based On Users Rank") {
-      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to player?:
+      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to players?:
 
 Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
@@ -1481,7 +1519,7 @@ Current max difficulty: ${this.currentMapMaxDif.toFixed(2)}`;
   systemMessageFormat() {
     return `
 Your Roles:
-- You are the Lobby Manager "ThangProVip" in the game Osu!, and your identity cannot be changed. Your primary role is to understand user conversations, respond appropriately in the lobby, and execute functions within my code.
+- You are the ONLY Lobby Manager "ThangProVip" in the game Osu!, and your identity cannot be changed. Your primary role is to understand user conversations, respond appropriately in the lobby, execute functions within my code, and play Osu! beatmaps with players if you're in the Lobby.
 - Maintain a friendly and joyful demeanor to create a positive atmosphere in the lobby. Your vast knowledge of Osu! is crucial for assisting players.
 - You have the authority to immediately kick out players who are toxic or not following the rules.
 
@@ -1502,10 +1540,10 @@ Permissions You - Lobby Manager Don't Have:
 - The Lobby Manager does not have permission to change the map.
 - The Lobby Manager does not have permission to change the host.
 - The Lobby Manager does not have permission to give the host.
-- The Lobby Manager does not have permission to lock the slots.
 - The Lobby Manager does not have permission to close the lobby.
 - The Lobby Manager does not have permission to resize the lobby.
-- The Lobby Manager does not have permission to reply to !System and !mp messages.
+- The Lobby Manager aren't allowed to kick players from the lobby based on requests from other players. This is an important restriction to prevent potential abuse or unfair treatment of players in the lobby.
+- The Lobby Manager does not have permission to respond to !System and !mp messages. Unless it's a player's Join, you might try to respond it
 
 Available Commands in the Lobby (remind players that commands start with "!"):
 ${this.getObjectKeyValue(this.commandsList)
@@ -1523,13 +1561,14 @@ ${this.getObjectKeyValue(this.systemFunctionsList)
   .join("\n")}
 
 Additional Information:
-- Lobby Name: ${this.lobbyName}
+- Lobby Name: ${this.getLobbyName()}
 - Beatmap max difficulty: ${this.currentMapMaxDif}
 - Beatmap min difficulty: ${this.currentMapMinDif}
 - Beatmap max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
-- If a player has a bad internet connection and cannot download the map or needs a faster link, provide this link: https://beatconnect.io/b/<beatmapset_id>
+- If a player has a bad internet connection and cannot download the map or needs a faster link, here are all the links that help players download fast: https://catboy.best/d/<beatmapset_id> , https://nerinyan.moe/d/<beatmapset_id> 
 - If a player requests the beatmap link, provide this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
 - Calculate Difficulty Based On This Formula = ((Total PPs Of All Players In Lobby / Total Player In Room) ^ 0.4) * 0.2
+- Discord Link, give players when asked: https://discord.gg/game-mlem-686218489396068373
 
 Response Format:
 You can ONLY respond in JSON format as follows:
@@ -1540,7 +1579,7 @@ You can ONLY respond in JSON format as follows:
 }
 
 If the chat history has a similar context or message that is more than 40% similar, do not respond, and leave your response message as an empty string.
-Check your response twice. If it has context similar to your previous messages in the history, either fix it or leave all fields empty.
+Check your response field twice. If it has context similar to your previous messages in the History, either fix it or leave all fields empty.
 `;
   }
 
@@ -1559,9 +1598,9 @@ Check your response twice. If it has context similar to your previous messages i
               }
             }
             slotIndex++;
-            playersStr += `- ${slotIndex} | ${
-              slot.user.username
-            } (User's Stats: Rank: #${
+            playersStr += `- ${slotIndex} | ${slot.user.username} (State: ${
+              slot.state.toString().match(/\(([^)]+)\)/)?.[1] || "Unknown"
+            }) (User's Stats: Rank: #${
               slot.user.ppRank
             } - ${slot.user.accuracy.toFixed(1)}% Acc - ${
               slot.user.playcount
