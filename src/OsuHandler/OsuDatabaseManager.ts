@@ -1,4 +1,4 @@
-//TODO VẪN ĐANG LÀM, CƠ BẢN LÀ CHECK, UPDATE, INSERT, HURRY UP
+//TODO VẪN ĐANG LÀM, CƠ BẢN LÀ CHECK, UPDATE, INSERT, HURRY UP https://imgur.com/a/gyOUWoA
 
 import { Collection, Db } from "mongodb";
 import { dbClient } from "..";
@@ -12,6 +12,7 @@ type osuPlayerData = {
   totalPlayedScore?: number;
   totalTopOne?: number;
   isBanned?: boolean;
+  banReason?: string
 };
 
 class OsuDatabaseManager {

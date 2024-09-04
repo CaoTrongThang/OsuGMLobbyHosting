@@ -133,5 +133,7 @@ TinsLevis
 Ripuli
 Revoken
 You are mine
+CkoCon
+
 ... And some players joined the lobby to play but never gotten to play
 

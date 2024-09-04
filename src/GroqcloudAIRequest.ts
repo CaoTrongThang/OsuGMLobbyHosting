@@ -1,6 +1,9 @@
 import Groq from "groq-sdk";
 import * as dotenv from "dotenv";
 
+
+//TODO SAU KHI CÓ BOT ACCOUNT CỦA OSU THÌ SỬA LẠI TÊN THANGPROVIP CỦA TẤT CẢ CÁC PROMPT
+
 dotenv.config();
 
 class GroqAccount {
