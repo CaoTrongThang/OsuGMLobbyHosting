@@ -67,7 +67,7 @@ type VoteData = {
 };
 
 type ChatWithAIType =
-  | "Normal Chat"
+  | "Chat History"
   | "Match Finished"
   | "Change Difficulty Based On Users Rank";
 
@@ -321,8 +321,9 @@ class OsuLobbyBot {
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
         this.chatHistoryHandler(message);
-        this.chatWithAI("Normal Chat");
-
+        if(message.user.username){
+          this.chatWithAI("Chat History");
+        }
         let msg = message.message;
         console.log(`${message.user.username}: ${msg}`);
         if (msg.startsWith("!")) {
@@ -1309,7 +1310,7 @@ class OsuLobbyBot {
       this.canChatWithAI = true;
     }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
 
-    if (type == "Normal Chat") {
+    if (type == "Chat History") {
       if (!this.playersChatHistory) return;
     }
 
@@ -1448,7 +1449,7 @@ class OsuLobbyBot {
       this.currentBeatmap?.beatmapset_id
     } - Beatmap Id: ${this.currentBeatmap?.beatmap_id}`;
 
-    if (type == "Normal Chat") {
+    if (type == "Chat History") {
       userPrompt = `
 Here's the Data "ThangProVip", try your best, remember the rules when you respond:
 
