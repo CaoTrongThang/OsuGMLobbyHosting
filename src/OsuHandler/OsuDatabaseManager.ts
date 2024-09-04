@@ -1,4 +1,4 @@
-//TODO VẪN ĐANG LÀM, CƠ BẢN LÀ CHECK, UPDATE, INSERT
+//TODO VẪN ĐANG LÀM, CƠ BẢN LÀ CHECK, UPDATE, INSERT, HURRY UP
 
 import { Collection, Db } from "mongodb";
 import { dbClient } from "..";
