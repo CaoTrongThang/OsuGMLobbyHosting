@@ -562,6 +562,11 @@ class OsuLobbyBot {
         }
       }
     }
+
+    if(ranks.length == 0){
+      return;
+    }
+    
     let medianPPPoint = Math.pow(this.getMedian(ranks), 0.4);
     let averageDif = medianPPPoint * 0.2;
 
@@ -590,7 +595,12 @@ class OsuLobbyBot {
       max = averageDif * 0.85;
       min = averageDif * 0.75;
     }
-
+    
+    if(!min && !max){
+      this.currentMapMinDif = 0;
+      this.currentMapMaxDif = 0;
+      return;
+    }
     if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
       this.lastMapMinDif = this.currentMapMinDif;
       this.lastMapMaxDif = this.currentMapMaxDif;
