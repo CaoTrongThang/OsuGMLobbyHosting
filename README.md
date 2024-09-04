@@ -30,7 +30,6 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 
 - **`kickplayer`**: Kicks a player from the lobby.
 - **`moveplayertoslot`**: Moves a player to a specific slot (1-16).
-- **`getfivebeatmapsinbeatmaphistory`**: Retrieves the last 5 played beatmaps in the lobby.
 
 ### Admin Functions
 
@@ -44,7 +43,7 @@ Create a `.env` file in the root of your project and configure the following env
 
 ```env
 GROQ_API_KEYS = "sda1233 1231443fd 12314gv 412312 5fsdfd" //Should create at least 4 accounts on GROQ to get 4 API keys, i mean if you don't want to pay
-AI_REPLY_COOLDOWN_SECONDS = "12" //If you're using a free account, so this will be depended on how many API Keys you have, if you only have 1 (which mean 6k tokens), you should change this to like 20
+AI_REPLY_COOLDOWN_SECONDS = "12" //About 7 is good, but you might need like 3 APIs, which mean 3 accounts, if you only have 1 (which mean 6k tokens), you should change this to like 20
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
@@ -126,4 +125,13 @@ For any inquiries or support, please reach out to [your email address].
 
 Me and my mate are playing visual studio code right here :>
 ![image](https://github.com/user-attachments/assets/40e49783-031b-4bee-8985-acb789e98c4a)
+
+Testers:
+Me
+Rot4tion
+TinsLevis
+Ripuli
+Revoken
+You are mine
+... And some players joined the lobby to play but never gotten to play
 

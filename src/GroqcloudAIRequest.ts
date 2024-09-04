@@ -25,15 +25,13 @@ class GroqCloudAIRequest {
 
   async chat(
     systemPrompt: string,
-    assistantPrompt: string,
     userPrompt: string
   ) {
     try {
-      if(this.currentAccoutIndex >= this.accounts.length - 1){
-        this.currentAccoutIndex = 0
+      if (this.currentAccoutIndex >= this.accounts.length - 1) {
+        this.currentAccoutIndex = 0;
       }
 
-      
       let completion;
 
       completion = await this.accounts[
@@ -46,7 +44,52 @@ class GroqCloudAIRequest {
           },
           {
             role: "assistant",
-            content: `${assistantPrompt}`,
+            content: `{
+        "response": "Undertood",
+        "functionName": "",
+        "functionParameters": []
+      }`,
+          },
+          {
+            role: "user",
+            content: "What will you do if you see the message of ThangProVip?",
+          },
+          {
+            role: "assistant",
+            content: `{
+        "response": "I will not reply to ThangProVip because that's my message, I will leave the response empty",
+        "functionName": "",
+        "functionParameters": []
+      }`,
+          },
+          {
+            role: "user",
+            content: `Good`,
+          },
+          {
+            role: "user",
+            content:
+              "What will you do if you see your message you're about to respond has the similar context with your last messages?",
+          },
+          {
+            role: "assistant",
+            content: `{
+        "response": "I will change my message to have a different way to respond or i will not respond",
+        "functionName": "",
+        "functionParameters": []
+      }`,
+          },
+          {
+            role: "user",
+            content: `Good Enough`,
+          },
+          {
+            role: "assistant",
+            content: `{
+        "response": "Thank you, I'll try my best to follow my System rules, the mindset that you've set for me before i respond!",
+        "functionName": "",
+        "functionParameters": []
+      }`,
           },
           {
             role: "user",
@@ -55,15 +98,15 @@ class GroqCloudAIRequest {
         ],
         model: "llama3-70b-8192",
       });
-      
+
       console.error("CURRENT GROQ ACCOUNT INDEX: ", this.currentAccoutIndex);
-      this.currentAccoutIndex++
+      this.currentAccoutIndex++;
 
       if (!completion) return null;
 
       return completion.choices[0]?.message?.content || "";
     } catch (e) {
-      this.currentAccoutIndex++
+      this.currentAccoutIndex++;
       console.log("AI REQUEST FAILED: ", e);
       return null;
     }

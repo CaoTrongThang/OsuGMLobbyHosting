@@ -77,7 +77,7 @@ class OsuAPIRequest {
       let filteredBeatmaps;
 
       filteredBeatmaps = beatmaps.filter(
-        (b) => Number(b.playcount) > 10000 && Number(b.total_length) < maxLength
+        (b) => Number(b.playcount) >= 10000 && Number(b.total_length) <= maxLength
       );
 
       filteredBeatmaps = beatmaps.filter(
@@ -85,11 +85,10 @@ class OsuAPIRequest {
           Number(b.difficultyrating) >= minDifficulty &&
           Number(b.difficultyrating) <= maxDifficulty &&
           Number(b.diff_approach) > ar &&
-          !(
-            b.title.toLowerCase().includes("tv size") ||
-            b.title.toLowerCase().includes("cut ver")
-          )
+          !b.title.toLowerCase().includes("cut ver")
+          
       );
+
 
       return filteredBeatmaps;
     } catch (error) {
