@@ -195,7 +195,8 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       if (this.lobbyPlayers.length == 0) {
-        await this.changeLobbyName();
+        await this.changeLobbyName(true);
+        await this.changeDifficultyBaseOnPlayersRank();
         return;
       }
       await this.changeDifficultyBaseOnPlayersRank();
@@ -541,16 +542,24 @@ class OsuLobbyBot {
 
   async changeLobbyName(noPlayer?: boolean) {
     if (this.osuChannel) {
-      let lobbyName = this.getLobbyName();
-      if (this.lastLobbyName == lobbyName) return;
 
+
+      
       if (noPlayer) {
         this.currentMapMinDif = 0;
-        this.currentMapMinDif = 0;
+        this.currentMapMaxDif = 0;
+        let lobbyName = this.getLobbyName();
+      if (this.lastLobbyName == lobbyName) return;
         await this.osuChannel.lobby.setName(lobbyName);
+        this.lastLobbyName = lobbyName;
+        return;
       }
+
+      let lobbyName = this.getLobbyName();
+      if (this.lastLobbyName == lobbyName) return;
       await this.osuChannel.lobby.setName(lobbyName);
       this.lastLobbyName = lobbyName;
+
     }
   }
 
@@ -1219,13 +1228,13 @@ class OsuLobbyBot {
             if (index == this.getChatHistory(true).length - 1) {
               return `- (${utils.formattedDate(
                 chat.timestamp
-              )}) (Lastest Message) Sytem's Message, Shouldn't response | ${
+              )}) (Lastest Message) Sytem's Message, Shouldn't response, leave the fields empty | ${
                 chat.message
               }`;
             }
             return `- (${utils.formattedDate(
               chat.timestamp
-            )}) Sytem's Message, Shouldn't response | ${chat.message}`;
+            )}) Sytem's Message, Shouldn't response, leave the fields empty | ${chat.message}`;
           }
 
           if (chat.playerName == "ThangProVip") {
@@ -1413,7 +1422,6 @@ Here's the Data "ThangProVip", try your best, remember the rules when you respon
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
-Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
 ! Host = this slot is the current host
 Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
@@ -1500,7 +1508,6 @@ ${playerScoreStr}`;
     if (type == "Change Difficulty Based On Users Rank") {
       userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to players?:
 
-Discord Link: https://discord.gg/game-mlem-686218489396068373
 ! Empty = this slot is empty
 ! Host = this slot is the current host
 Total Players: ${this.lobbyPlayers.length}/${
@@ -1565,10 +1572,11 @@ Additional Information:
 - Beatmap max difficulty: ${this.currentMapMaxDif}
 - Beatmap min difficulty: ${this.currentMapMinDif}
 - Beatmap max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
-- If a player has a bad internet connection and cannot download the map or needs a faster link, here are all the links that help players download fast: https://catboy.best/d/<beatmapset_id> , https://nerinyan.moe/d/<beatmapset_id> 
+- If a player has a bad internet connection and cannot download the map or needs faster links, here are all the links that help players download the map faster, remember replace the <beatmapset_id>, by the current beatmapset id: https://catboy.best/d/<beatmapset_id> , https://nerinyan.moe/d/<beatmapset_id> 
 - If a player requests the beatmap link, provide this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#osu/<beatmap_id>
 - Calculate Difficulty Based On This Formula = ((Total PPs Of All Players In Lobby / Total Player In Room) ^ 0.4) * 0.2
 - Discord Link, give players when asked: https://discord.gg/game-mlem-686218489396068373
+- Here is all the emoticons  you can use in Osu! lobby to improve your chat: 😃😊👎👍✋😀😬😆😍😗😛😎😏😑😠😡😖😮😯😥😭😈👼☠️😑😖
 
 Response Format:
 You can ONLY respond in JSON format as follows:
