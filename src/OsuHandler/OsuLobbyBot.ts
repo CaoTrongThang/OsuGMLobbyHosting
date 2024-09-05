@@ -177,7 +177,7 @@ class OsuLobbyBot {
     setInterval(async () => {
       this.updateEmbed();
       this.osuChannel?.lobby.updateSettings()
-    }, 1000 * 15);
+    }, 1000 * 12);
 
     setInterval(async () => {
       if (this.matchIsPlaying){
