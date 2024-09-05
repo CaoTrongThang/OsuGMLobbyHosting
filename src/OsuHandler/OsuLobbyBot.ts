@@ -41,6 +41,9 @@ type AIresponse = {
   response: string;
   functionName: string;
   functionParameters: string;
+  isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory: string; // TODO Please for the love of god, do not name your variables like that.
+  howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages: string;
+  didYouDoubleCheckYourResponse: string;
 };
 
 type PlayersVotesData = {
@@ -63,7 +66,7 @@ type voteType =
 
 type VoteData = {
   player: Bancho.BanchoUser;
-  vote_type: voteType;
+  voteType: voteType;
 };
 
 type ChatWithAIType =
@@ -71,12 +74,14 @@ type ChatWithAIType =
   | "Match Finished"
   | "Change Difficulty Based On Users Rank";
 
+
+// Some constants that i saw while refactoring
+const ROOM_MODE_HOST_ROTATE = "Host Rotate";
+const ROOM_MODE_AUTO_MAP_PICK = "Auto Map Pick";
+const MIN_PLAYERS_FOR_AUTO_MAP_PICK = 4;
+const MAX_PLAYERS_FOR_AUTO_MAP_PICK = 5;
+
 class OsuLobbyBot {
-  // constants
-  const ROOM_MODE_HOST_ROTATE = "Host Rotate";
-  const ROOM_MODE_AUTO_MAP_PICK = "Auto Map Pick";
-  const MIN_PLAYERS_FOR_AUTO_MAP_PICK = 4;
-  const MAX_PLAYERS_FOR_AUTO_MAP_PICK = 5;
 
 
 
@@ -169,6 +174,9 @@ class OsuLobbyBot {
   isMatchStarting: boolean = false;
   previousLobbyName = "";
 
+  //  Embed Variables
+  embedMessage: Message | null = null;
+
   constructor() {
     // Initialize the list of lobby players
     this.lobbyPlayers = [];
@@ -229,7 +237,7 @@ class OsuLobbyBot {
         await this.updateEmbed();
         if (!this.isMatchInProgress) return;
 
-        const allPlayersReady = await this.areAllPlayersReady();
+        const allPlayersReady = await this.arePlayersReady();
         if (allPlayersReady) {
           this.startMatchTimer();
         }
@@ -286,7 +294,7 @@ class OsuLobbyBot {
     if(!this.osuChannel) return;
 
     await this.osuChannel.lobby.setPassword("");
-    await this.autoMapPick();
+    await this.autoPickMap();
     await this.osuChannel.lobby.setMods([], true);
     console.log(`===================== Lobby created! Name: ${this.osuChannel.lobby.name}`);
   }
@@ -317,10 +325,10 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
 
     console.log(`+ ${PlayerObject.player.user.username} joined the lobby`);
-    await this.updateLobbyPlayers(PlayerObject.player, "joined");
+    await this.updatePlayerList(PlayerObject.player, "joined");
 
-    if (this.lobbyMode === this.ROOM_MODE_HOST_ROTATE && this.lobbyPlayers.length === 1) {
-        await this.hostRotate();
+    if (this.lobbyMode === ROOM_MODE_HOST_ROTATE && this.lobbyPlayers.length === 1) {
+        await this.rotateHost();
     }
 
     // Additional logic for other room modes can be added here if needed
@@ -330,10 +338,10 @@ class OsuLobbyBot {
   // Handles when a player leaves the lobby
   private async handlePlayerLeft(lobbyPlayer: Bancho.BanchoLobbyPlayer) {
     try {
-        await this.updateLobbyPlayers(lobbyPlayer, "left");
+        await this.updatePlayerList(lobbyPlayer, "left");
         console.log(`- ${lobbyPlayer.user.username} left the lobby`);
 
-        if (this.lobbyMode === this.ROOM_MODE_HOST_ROTATE) {
+        if (this.lobbyMode === ROOM_MODE_HOST_ROTATE) {
             await this.handleHostRotationOnPlayerLeft(lobbyPlayer);
         }
 
@@ -374,15 +382,15 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
 
     try {
-        if (this.lobbyMode === this.ROOM_MODE_AUTO_MAP_PICK) {
-            await this.autoMapPick();
-            if (this.lobbyPlayers.length >= this.MIN_PLAYERS_FOR_AUTO_MAP_PICK) {
+        if (this.lobbyMode === ROOM_MODE_AUTO_MAP_PICK) {
+            await this.autoPickMap();
+            if (this.lobbyPlayers.length >= MIN_PLAYERS_FOR_AUTO_MAP_PICK) {
                 this.osuChannel?.lobby.startMatch(this.matchStartTimeout);
             }
         }
 
-        if (this.lobbyMode === this.ROOM_MODE_HOST_ROTATE) {
-            await this.hostRotate();
+        if (this.lobbyMode === ROOM_MODE_HOST_ROTATE) {
+            await this.rotateHost();
         }
 
         this.matchStartTime = null;
@@ -402,8 +410,8 @@ class OsuLobbyBot {
   // Handles when a match is aborted
   private async handleMatchAborted() {
     console.log("MATCH ABORTED");
-    if (this.lobbyMode === this.ROOM_MODE_AUTO_MAP_PICK && this.lobbyPlayers.length > 0) {
-        if (this.lobbyPlayers.length >= this.MIN_PLAYERS_FOR_AUTO_MAP_PICK) {
+    if (this.lobbyMode === ROOM_MODE_AUTO_MAP_PICK && this.lobbyPlayers.length > 0) {
+        if (this.lobbyPlayers.length >= MIN_PLAYERS_FOR_AUTO_MAP_PICK) {
             this.osuChannel?.lobby.startMatch(this.autoPickModeChangeTimeout);
         }
     }
@@ -412,7 +420,7 @@ class OsuLobbyBot {
   // Handles beatmap changes
   private async handleBeatmapChange(beatmap: ns.Beatmap) {
     try {
-        if (this.lobbyMode === this.ROOM_MODE_HOST_ROTATE) {
+        if (this.lobbyMode === ROOM_MODE_HOST_ROTATE) {
             await this.handleBeatmapValidation(beatmap);
         } else {
             this.lastBeatmap = beatmap;
@@ -441,13 +449,13 @@ class OsuLobbyBot {
     if (this.lobbyPlayers.length === 0 && state) {
         this.osuChannel?.sendMessage("Match aborted because no players");
         this.osuChannel?.lobby.abortMatch();
-        this.matchAbortTimer();
+        this.abortMatchTimer();
     }
   }
 
   // Handles when all players are ready
   private async handleAllPlayersReady() {
-    if (await this.areAllPlayersReady()) {
+    if (await this.arePlayersReady()) {
         this.startMatchTimer();
     }
   }
@@ -460,7 +468,7 @@ class OsuLobbyBot {
         !this.isMatchInProgress &&
         this.lobbyPlayers.length > 0
     ) {
-        await this.hostRotate();
+        await this.rotateHost();
     } else if (this.lobbyPlayers.length === 0) {
         this.currentHost = undefined;
     }
@@ -473,9 +481,9 @@ class OsuLobbyBot {
   }
 
   private async handleAutoMapPickOnPlayerLeft() {
-    if (this.lobbyMode === this.ROOM_MODE_AUTO_MAP_PICK) {
-        if (this.lobbyPlayers.length < this.MAX_PLAYERS_FOR_AUTO_MAP_PICK) {
-            if (await this.areAllPlayersReady()) {
+    if (this.lobbyMode === ROOM_MODE_AUTO_MAP_PICK) {
+        if (this.lobbyPlayers.length < MAX_PLAYERS_FOR_AUTO_MAP_PICK) {
+            if (await this.arePlayersReady()) {
                 await this.startMatchTimer();
             }
         } else {
@@ -536,597 +544,672 @@ class OsuLobbyBot {
                 beatmapID: beatmap.beatmapId,
                 beatmapSetID: beatmap.beatmapSetId,
             };
-            this.beatmapInfoSendChannel(
-                beatmap.title,
-                beatmap.artist,
-                beatmap.difficultyRating.toString(),
-                beatmap.bpm.toString(),
-                beatmap.totalLength.toString(),
-                beatmap.circleSize.toString(),
-                beatmap.approachRate.toString()
-            );
+            let v1Beatmap = this.convertBeatmapV2ToV1(beatmap)
+            if(v1Beatmap == null) return; // Returns if there was a problem with the conversion
+            this.sendBeatmapInfo(v1Beatmap);
         }
     }
   }
 
 
-  //I want to get the key or the value of the commandsList
-  getObjectKeyValue(obj: Object) {
-    let commands: { key: string; value: string }[] = [];
-    for (const x of Object.keys(obj)) {
-      commands.push({
-        key: x,
-        value: (obj as any)[x],
-      });
-    }
-    return commands;
+  /**
+   * Retrieves key-value pairs from an object.
+   * @param obj The object to retrieve key-value pairs from.
+   * @returns An array of objects containing key and value pairs.
+   */
+  getObjectKeyValue(obj: Record<string, any>): { key: string; value: string }[] {
+    return Object.entries(obj).map(([key, value]) => ({
+      key,
+      value: value.toString(),
+    }));
   }
 
+  /**
+   * Gets all function names from an object's prototype.
+   * @param obj The object to retrieve functions from.
+   * @returns An array of function names (keys).
+   */
   getAllFunctions<T>(obj: T): (keyof T)[] {
-    return Object.getOwnPropertyNames(Object.getPrototypeOf(obj)).filter(
-      (key) => typeof obj[key as keyof T] === "function"
-    ) as (keyof T)[];
+    return Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
+      .filter((key) => typeof obj[key as keyof T] === "function") as (keyof T)[];
   }
 
-  getChatHistory(filter: boolean) {
-    if (filter) {
-      return this.playersChatHistory.filter(
-        (message) =>
-          !message.message.startsWith("!") &&
-          !this.getObjectKeyValue(this.commandsList).some(
-            (command) =>
-              message.message.startsWith(command.key) ||
-              message.message.includes(command.value)
-          )
-      );
+  /**
+   * Filters and retrieves chat history based on the specified filter condition.
+   * @param filter Whether to apply filtering to the chat history.
+   * @returns The filtered or unfiltered chat history.
+   */
+  getChatHistory(filter: boolean): { playerName: string; message: string; timestamp: Date }[] {
+    if (!filter) return this.chatHistory;
+
+    const commandsList = this.getObjectKeyValue(this.commands);
+
+    return this.chatHistory.filter(
+      (message) =>
+        !message.message.startsWith("!") &&
+        !commandsList.some(
+          (command) =>
+            message.message.startsWith(command.key) || message.message.includes(command.value)
+        )
+    );
+  }
+
+  /**
+   * Manages the chat history by adding new messages and maintaining the history length.
+   * @param message The incoming message object from Bancho.
+   */
+  chatHistoryHandler(message: Bancho.BanchoMessage): void {
+    if (this.chatHistory.length >= this.maxChatHistoryLength) {
+      this.chatHistory.shift();
     }
-
-    return this.playersChatHistory;
+    this.chatHistory.push({
+      playerName: message.user.username,
+      message: message.message,
+      timestamp: new Date(),
+    });
   }
 
-  chatHistoryHandler(message: Bancho.BanchoMessage) {
-    if (this.playersChatHistory.length > this.maxChatHistoryLength) {
-      this.playersChatHistory.shift();
-      this.playersChatHistory.push({
-        playerName: message.user.username,
-        message: message.message,
-        timestamp: new Date(),
-      });
-    } else {
-      this.playersChatHistory.push({
-        playerName: message.user.username,
-        message: message.message,
-        timestamp: new Date(),
-      });
-    }
-  }
-
-  sendVoteMessage(vote: VoteData) {
+  /**
+   * Sends a vote message to the lobby.
+   * @param vote The vote data containing player and vote type.
+   */
+  sendVoteMessage(vote: VoteData): void {
     if (this.osuChannel) {
+      const voteCount = this.voteData.filter((v) => v.voteType === vote.voteType).length;
       this.osuChannel.sendMessage(
-        `${vote.player.username} voted to ${vote.vote_type}: ${
-          this.voteData.filter((v) => v.vote_type == vote.vote_type).length
-        }/${this.lobbyPlayers.length} votes`
+        `${vote.player.username} voted to ${vote.voteType}: ${voteCount}/${this.lobbyPlayers.length} votes`
       );
     }
   }
 
-  async changeLobbyName(noPlayer?: boolean) {
-    if (this.osuChannel) {
-      if (noPlayer) {
-        this.currentMapMinDif = 0;
-        this.currentMapMaxDif = 0;
-        let lobbyName = this.getLobbyName();
-        if (this.lastLobbyName == lobbyName) return;
-        await this.osuChannel.lobby.setName(lobbyName);
-        this.lastLobbyName = lobbyName;
-        return;
-      }
-
-      let lobbyName = this.getLobbyName();
-      if (this.lastLobbyName == lobbyName) return;
-      await this.osuChannel.lobby.setName(lobbyName);
-      this.lastLobbyName = lobbyName;
-    }
-  }
-
-  getLobbyName() {
-    return `${this.currentMapMinDif.toFixed(
-      1
-    )}* - ${this.currentMapMaxDif.toFixed(1)}* | Auto - !rhelp - DC: Game Mlem`;
-  }
-
-  async changeDifficultyBasedOnPlayersRank() {
-    if (this.matchIsPlaying) return;
-    let ranks: number[] = [];
-
+  /**
+   * Changes the lobby name based on the presence of players or the current difficulty.
+   * @param noPlayer Optional flag indicating whether there are no players in the lobby.
+   */
+  async changeLobbyName(noPlayer: boolean = false): Promise<void> {
     if (!this.osuChannel) return;
 
-    for (const slot of this.osuChannel.lobby.slots) {
-      if (slot) {
-        if (slot.user) {
-          ranks.push(slot.user.ppRaw);
-        }
-      }
+    if (noPlayer) {
+      this.resetDifficultyRange();
     }
 
-    if (ranks.length == 0) {
-      if (
-        this.osuChannel.lobby.beatmapId != 75 &&
-        this.currentMapMinDif == 0 &&
-        this.currentMapMaxDif == 0
-      ) {
-        console.log("Changing beatmap when there's no players in room!!!!");
-        await this.autoMapPick();
-      }
+    const lobbyName = this.getLobbyName();
+    if (this.previousLobbyName !== lobbyName) {
+      await this.osuChannel.lobby.setName(lobbyName);
+      this.previousLobbyName = lobbyName;
+    }
+  }
+
+  /**
+   * Constructs and returns the lobby name based on the current settings.
+   * @returns The formatted lobby name.
+   */
+  getLobbyName(): string {
+    return `${this.currentMapDifficultyRange.min.toFixed(1)}* - ${this.currentMapDifficultyRange.max.toFixed(1)}* | Auto - !rhelp - DC: Game Mlem`;
+  }
+
+  /**
+   * Changes the difficulty of the lobby based on the players' ranks.
+   */
+  async changeDifficultyBasedOnPlayersRank(): Promise<void> {
+    if (this.isMatchInProgress || !this.osuChannel) return;
+
+    const playersPerformancePoints = this.getPlayersPerformancePoints();
+
+    if (playersPerformancePoints.length === 0) {
+      await this.handleNoPlayers();
       return;
     }
 
-    let medianPPPoint = Math.pow(this.getMedian(ranks), 0.4);
-    let averageDif = medianPPPoint * 0.2;
+    const lobbyPerformancePoints = this.calculateLobbyPerformancePoints(playersPerformancePoints, 2); // Medium Difficulty
+    const lowestDeltaPerformancePoints = this.findLowestDeltaPerformancePoints(playersPerformancePoints)
+    const difficultyRange = this.calculateDifficultyRange(lobbyPerformancePoints, lowestDeltaPerformancePoints);
 
-    let max = 0;
-    let min = 0;
-    //If mrekk come it, the dif won't be 13*, it will be around 11* <3
-    if (medianPPPoint >= 0 && medianPPPoint <= 10) {
-      max = averageDif * 1.5;
-      min = averageDif * 1;
-    } else if (medianPPPoint >= 10 && medianPPPoint <= 20) {
-      max = averageDif * 1.4;
-      min = averageDif * 1;
-    } else if (medianPPPoint >= 20 && medianPPPoint <= 30) {
-      max = averageDif * 1.19;
-      min = averageDif * 1.0;
-    } else if (medianPPPoint >= 30 && medianPPPoint <= 40) {
-      max = averageDif * 1.05;
-      min = averageDif * 0.91;
-    } else if (medianPPPoint >= 40 && medianPPPoint <= 50) {
-      max = averageDif * 0.95;
-      min = averageDif * 0.85;
-    } else if (medianPPPoint >= 50 && medianPPPoint <= 60) {
-      max = averageDif * 0.9;
-      min = averageDif * 0.8;
-    } else {
-      max = averageDif * 0.85;
-      min = averageDif * 0.75;
-    }
-
-    if (!min && !max) {
-      this.currentMapMinDif = 0;
-      this.currentMapMaxDif = 0;
-      return;
-    }
-    if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
-      this.lastMapMinDif = this.currentMapMinDif;
-      this.lastMapMaxDif = this.currentMapMaxDif;
-      this.currentMapMinDif = min;
-      this.currentMapMaxDif = max;
-
-      await this.autoMapPick();
+    if (this.isDifficultyRangeChanged(difficultyRange)) {
+      this.updateDifficultyRange(difficultyRange);
+      await this.autoPickMap();
       await this.changeLobbyName();
       await this.chatWithAI("Change Difficulty Based On Users Rank", true);
     }
   }
+  
+  // Reset the difficulty range
+  private resetDifficultyRange(): void {
+    this.currentMapDifficultyRange = { min: 0, max: 0 };
+  }
 
-  //Show players commands
-  async rhelp(message?: Bancho.BanchoMessage, playerName?: string) {
-    if (!this.osuChannel) return;
-    await this.osuChannel.sendMessage(
-      `This is list of the commands, start with "!":`
-    );
-    for (const command of this.getObjectKeyValue(this.commandsList)) {
-      this.osuChannel.sendMessage(`${command.key}`);
+  private findLowestDeltaPerformancePoints(numbers: number[]): number {
+    if (numbers.length < 2) {
+        return 0; // Not enough numbers to find a delta
+    }
+
+    // Sort the array to find the smallest delta easily
+    numbers.sort((a, b) => a - b);
+
+    let minDelta = Infinity;
+
+    // Compare consecutive numbers to find the smallest difference
+    for (let i = 1; i < numbers.length; i++) {
+        const delta = numbers[i] - numbers[i - 1];
+        if (delta < minDelta) {
+            minDelta = delta;
+        }
+    }
+
+    return minDelta;
+}
+
+  // Get the list of player ranks
+  private getPlayersPerformancePoints(): number[] {
+    if(!this.osuChannel) return [];
+    return this.osuChannel.lobby.slots
+      .filter(slot => slot?.user)
+      .map(slot => slot.user.ppRaw);
+  }
+  
+  // Handle case when there are no players in the lobby
+  private async handleNoPlayers() {
+    if(!this.osuChannel) return;
+    if (this.osuChannel.lobby.beatmapId !== 75 && this.currentMapDifficultyRange.min === 0 && this.currentMapDifficultyRange.max === 0) {
+      console.log("There are no players in the room, changing beatmap.");
+      await this.autoMapPick();
     }
   }
-  async timeLeft(message?: Bancho.BanchoMessage, playerName?: string) {
+  
+  // Calculate the median PP value
+  calculateLobbyPerformancePoints(playerPerformancePoints: number[], difficultyLevel: number): number {
+    // If there is only one player, return its pp number.
+    if(playerPerformancePoints.length == 1) return playerPerformancePoints[0];
+
+    // Ensure difficulty is between 1 and 3
+    if (difficultyLevel < 1 || difficultyLevel > 3) {
+        throw new Error("Difficulty must be between 1 and 3");
+    }
+
+    // Sort player PP in ascending order
+    playerPerformancePoints.sort((a, b) => a - b);
+
+    // Calculate the index based on the difficulty level
+    const index = Math.ceil((playerPerformancePoints.length / 4) * difficultyLevel);
+
+    // Split the player PP array into right and left parts
+    const right = playerPerformancePoints.slice(0, index);
+    const left = playerPerformancePoints.slice(index);
+
+    // Calculate the right average
+    let rightAvg = right[0];
+    for (let x = 1; x < right.length; x++) {
+        rightAvg += right[x];
+        rightAvg /= 2;
+    }
+
+    // Calculate the left average
+    let leftAvg = left[left.length - 1];
+    for (let x = left.length - 2; x >= 0; x--) {
+        leftAvg += left[x];
+        leftAvg /= 2;
+    }
+
+    // Calculate the total average and round it up
+    const totalAvg = Math.ceil((rightAvg + leftAvg) / 2);
+
+    return totalAvg;
+  }
+  
+  // Calculate difficulty based on Performance Points
+  private calculateDifficultyInStars(performancePoints: number): number {
+    return Math.pow(performancePoints, 0.4) * 0.195; // osu!'s difficulty calculation formula
+  }
+  
+  // Calculate the difficulty range based on median PP and average difficulty
+  private calculateDifficultyRange(performancePoints: number, lowestDelta: number): { min: number; max: number } {
+    let min = this.calculateDifficultyInStars(performancePoints - lowestDelta)
+    let max = this.calculateDifficultyInStars(performancePoints + lowestDelta) 
+
+    return { min, max };
+  }
+  
+  // Check if the difficulty range has changed
+  private isDifficultyRangeChanged(newRange: { min: number; max: number }): boolean {
+    return newRange.min !== this.currentMapDifficultyRange.min || newRange.max !== this.currentMapDifficultyRange.max;
+  }
+  
+  // Update the current and last difficulty ranges
+  private updateDifficultyRange(newRange: { min: number; max: number }) {
+    this.lastMapDifficultyRange = { ...this.currentMapDifficultyRange };
+    this.currentMapDifficultyRange = newRange;
+  }
+  
+/**
+   * Displays the list of available commands.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player requesting the command list.
+   */
+  async rhelp(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
     if (!this.osuChannel) return;
+
+    await this.osuChannel.sendMessage('This is the list of commands, start with "!":');
+    for (const command of this.getObjectKeyValue(this.commands)) {
+      await this.osuChannel.sendMessage(`${command.key}`);
+    }
+  }
+
+  /**
+   * Sends the remaining time of the current beatmap.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player requesting time left.
+   */
+  async timeLeft(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
     if (!this.osuChannel) return;
 
     const timeLeft = this.calculateTimeLeft();
     if (timeLeft !== 0) {
-      this.osuChannel.sendMessage(
-        `Time left of the beatmap: ${utils.formatSeconds(
-          timeLeft
-        )}, lets wait <3`
-      );
+      await this.osuChannel.sendMessage(`Time left of the beatmap: ${utils.formatSeconds(timeLeft)}, let's wait <3`);
     } else {
-      this.osuChannel.sendMessage("No match is currently in progress.");
+      await this.osuChannel.sendMessage('No match is currently in progress.');
     }
   }
 
-  async voteHandler(
-    message?: Bancho.BanchoMessage,
-    voteT?: vote_type,
-    playerName?: string
-  ) {
+  /**
+   * Handles voting actions for various vote types.
+   * @param message Optional Bancho message object.
+   * @param voteT The type of vote (e.g., 'Start Match', 'Abort Match').
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async voteHandler(message: Bancho.BanchoMessage, voteT: voteType, playerName: string): Promise<void> {
     if (!this.osuChannel) return;
 
-    if (this.matchIsPlaying && voteT != "Start Match") {
-      await this.osuChannel.sendMessage(
-        "Can't Vote when the match is in playing!"
-      );
+    if (this.isMatchInProgress && voteT !== 'Start Match') {
+      await this.osuChannel.sendMessage("Can't vote when the match is in progress!");
       return;
     }
 
-    if (voteT == undefined) return;
-    console.log("VOTING :       ======================== ", voteT);
+    if (!voteT) return;
 
-    if (message) {
-      if (
-        this.voteData.some(
-          (v) => v.player.id == message.user.id && v.vote_type == voteT
-        )
-      )
-        return;
-      let vote: VoteData = {
-        player: message.user,
-        vote_type: voteT,
-      };
+    if (message && this.isDuplicateVote(message.user.id, voteT)) return;
 
+    const vote = message
+      ? { player: message.user, voteType: voteT }
+      : this.getPlayerVote(playerName, voteT);
+
+    if (vote) {
       this.voteData.push(vote);
       this.sendVoteMessage(vote);
-    } else {
-      if (playerName) {
-        if (
-          !this.voteData.some(
-            (vote) =>
-              vote.player.username == playerName && vote.vote_type == voteT
-          )
-        ) {
-          let player = this.lobbyPlayers.find(
-            (p) => p.user.username == playerName
-          );
-          if (!player) return;
-          let vote: VoteData = {
-            player: player.user,
-            vote_type: voteT,
-          };
-          this.voteData.push(vote);
-          this.sendVoteMessage(vote);
-        }
-      }
     }
   }
 
-  async resetVote(voteT?: vote_type) {
-    if (voteT == undefined) return;
-    this.voteData = this.voteData.filter((v) => v.vote_type != voteT);
+  /**
+   * Resets all votes of a specific type.
+   * @param voteT The vote type to reset (e.g., 'Start Match').
+   */
+  async resetVote(voteT?: voteType): Promise<void> {
+    if (!voteT) return;
+    this.voteData = this.voteData.filter(v => v.voteType !== voteT);
   }
-  async voteabortmatch(message?: Bancho.BanchoMessage, playerName?: string) {
+
+  /**
+   * Handles voting to abort the match.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async abortmatch(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
     if (!this.osuChannel) return;
 
-    this.voteHandler(message, "Abort Match", playerName);
+    await this.voteHandler(message, 'Abort Match', playerName);
 
-    if (
-      this.voteData.filter((v) => v.vote_type == "Abort Match").length >
-      this.lobbyPlayers.length / 3
-    ) {
-      await this.matchAbortTimer();
-      this.osuChannel.sendMessage(`The match is aborted`);
-      this.resetVote("Abort Match");
+    if (this.countVotes('Abort Match') > this.lobbyPlayers.length / 3) {
+      await this.abortMatchTimer();
+      await this.osuChannel.sendMessage('The match is aborted');
+      this.resetVote('Abort Match');
     }
   }
 
-  async votestartmatch(message?: Bancho.BanchoMessage, playerName?: string) {
+  /**
+   * Handles voting to start the match.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async startmatch(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
     if (!this.osuChannel) return;
-    this.voteHandler(message, "Start Match", playerName);
 
-    if (
-      this.voteData.filter((v) => v.vote_type == "Start Match").length >
-      this.lobbyPlayers.length / 3
-    ) {
+    await this.voteHandler(message, 'Start Match', playerName);
+
+    if (this.countVotes('Start Match') > this.lobbyPlayers.length / 3) {
       await this.startMatchTimer();
-      this.osuChannel.sendMessage(`The match is started`);
-      this.resetVote("Start Match");
+      await this.osuChannel.sendMessage('The match is started');
+      this.resetVote('Start Match');
     }
   }
 
-  async voteHostSkip(message?: Bancho.BanchoMessage, playerName?: string) {
-    if (!this.osuChannel) return;
-    if (!(this.lobbyMode == "Host Rotate")) return;
+  /**
+   * Handles voting to skip the current host.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async skiphost(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
+    if (!this.osuChannel || this.lobbyMode !== 'Host Rotate') return;
 
-    this.voteHandler(message, "Skip Host", playerName);
+    await this.voteHandler(message, 'Skip Host', playerName);
 
-    if (
-      this.voteData.filter((v) => v.vote_type == "Skip Host").length >
-      this.lobbyPlayers.length / 3
-    ) {
-      await this.hostRotate();
-      this.osuChannel.sendMessage(`Host is skipped`);
-      this.resetVote("Skip Host");
+    if (this.countVotes('Skip Host') > this.lobbyPlayers.length / 3) {
+      await this.rotateHost();
+      await this.osuChannel.sendMessage('Host is skipped');
+      this.resetVote('Skip Host');
     }
   }
-  async voteMapSkip(message?: Bancho.BanchoMessage, playerName?: string) {
-    if (!this.osuChannel) return;
-    if (!(this.lobbyMode == "Auto Map Pick")) return;
 
-    if (this.lobbyPlayers.length < 1) {
+  /**
+   * Handles voting to skip the current map.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async skipmap(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
+    if (!this.osuChannel || this.lobbyMode !== 'Auto Map Pick' || this.lobbyPlayers.length < 1) return;
+
+    await this.voteHandler(message, 'Skip Map', playerName);
+
+    if (this.countVotes('Skip Map') > this.lobbyPlayers.length / 3) {
+      await this.autoPickMap();
+      await this.osuChannel.sendMessage('Map is skipped');
+      this.resetVote('Skip Map');
+    }
+  }
+
+  /**
+   * Handles voting to change the lobby mode.
+   * @param message Optional Bancho message object.
+   * @param playerName Optional name of the player initiating the vote.
+   */
+  async changemode(message: Bancho.BanchoMessage, playerName: string): Promise<void> {
+    if (!this.osuChannel) return;
+
+    await this.voteHandler(message, 'Change Mode', playerName);
+
+    if (this.countVotes('Change Mode') > this.lobbyPlayers.length / 3) {
+      this.resetVote('Change Mode');
+      this.toggleLobbyMode();
+      await this.osuChannel.sendMessage(`Lobby's mode changed to ${this.lobbyMode}`);
+    }
+  }
+
+  /**
+   * Kicks a player from the lobby.
+   * @param playerName The name of the player to kick.
+   */
+  async kickplayer(playerName: string): Promise<void> {
+    if (!this.osuChannel || !playerName) return;
+
+    const player = this.lobbyPlayers.find(p => p.user.username === playerName);
+    if (!player) return;
+
+    if (this.adminUserIds.includes(Number(player.user.id))) {
+      await this.osuChannel.sendMessage(`You can't kick ${player.user.username} because they are an admin`);
       return;
     }
 
-    this.voteHandler(message, "Skip Map", playerName);
-
-    if (
-      this.voteData.filter((v) => v.vote_type == "Skip Map").length >
-      this.lobbyPlayers.length / 3
-    ) {
-      await this.autoMapPick();
-      this.osuChannel.sendMessage(`Map is skipped`);
-      this.resetVote("Skip Map");
-    }
-  }
-  async votechangemode(message?: Bancho.BanchoMessage, playerName?: string) {
-    if (!this.osuChannel) return;
-
-    this.voteHandler(message, "Change Mode", playerName);
-
-    if (
-      this.voteData.filter((v) => v.vote_type == "Change Mode").length >
-      this.lobbyPlayers.length / 3
-    ) {
-      this.resetVote("Change Mode");
-      if (this.lobbyMode == "Host Rotate") {
-        await this.osuChannel.lobby.clearHost();
-        await this.autoMapPick();
-        this.lobbyMode = "Auto Map Pick";
-        if (this.lobbyPlayers.length >= 4) {
-          await this.startMatchTimer(this.startMatchTimeout);
-        }
-      } else if (this.lobbyMode == "Auto Map Pick") {
-        this.lobbyMode = "Host Rotate";
-        await this.hostRotate();
-      }
-      this.osuChannel.sendMessage(`Lobby's mode changed to ${this.lobbyMode}`);
-    }
-  }
-
-  async kickplayer(playerName?: string) {
-    if (!this.osuChannel) return;
-    if (!playerName) return;
     try {
-      let player = this.lobbyPlayers.find((p) => p.user.username == playerName);
-      if (this.adminIDs.includes(Number(player?.user.id))) {
-        await this.osuChannel.sendMessage(
-          `You can't kick ${player?.user.username} because he is an admin`
-        );
-        return;
-      }
-
-      await this.osuChannel.lobby.kickPlayer(`#${player?.user.id}`);
-    } catch (e) {
-      console.log(e);
+      await this.osuChannel.lobby.kickPlayer(`#${player.user.id}`);
+    } catch (error) {
+      console.error(error);
       await this.closeLobby();
     }
   }
 
-  async moveplayertoslot(playerName?: string, slot?: any) {
+  /**
+   * Moves a player to a specific slot.
+   * @param playerName The name of the player to move.
+   * @param slot The slot number to move the player to.
+   */
+  async moveplayertoslot(playerName?: string, slot?: number): Promise<void> {
+    if (!this.osuChannel || typeof slot !== 'number' || !playerName) return;
+
+    const player = this.lobbyPlayers.find(p => p.user.username === playerName);
+    if (!player || slot > this.osuChannel.lobby.slots.length - 1) return;
+
     try {
-      if (!this.osuChannel && !(slot instanceof Number) && !slot && !playerName)
-        return;
-
-      let player = this.lobbyPlayers.find((p) => p.user.username == playerName);
-      if (!player) return;
-
-      if (slot > this.osuChannel!.lobby.slots.length - 1) {
-        return;
-      }
-
-      await this.osuChannel!.lobby.movePlayer(player, slot - 1);
-    } catch (e) {
-      console.log(e);
+      await this.osuChannel.lobby.movePlayer(player, slot - 1);
+    } catch (error) {
+      console.error(error);
       await this.closeLobby();
     }
   }
 
-  async hostRotate() {
+  // Utility functions
+
+  /**
+   * Counts the number of votes for a specific vote type.
+   * @param voteType The type of vote to count.
+   * @returns The number of votes for the given vote type.
+   */
+  private countVotes(voteType: voteType): number {
+    return this.voteData.filter(v => v.voteType === voteType).length;
+  }
+
+  /**
+   * Checks if a player has already voted for a specific vote type.
+   * @param playerId The ID of the player.
+   * @param voteType The type of vote to check.
+   * @returns True if the player has already voted, otherwise false.
+   */
+  private isDuplicateVote(playerId: number, voteType: voteType): boolean {
+    return this.voteData.some(v => v.player.id === playerId && v.voteType === voteType);
+  }
+
+  /**
+   * Retrieves a player's vote if the player name is provided.
+   * @param playerName The name of the player.
+   * @param voteType The type of vote.
+   * @returns The VoteData object if the player exists, otherwise null.
+   */
+  private getPlayerVote(playerName: string, voteType: voteType): VoteData | null {
+    const player = this.lobbyPlayers.find(p => p.user.username === playerName);
+    return player ? { player: player.user, voteType } : null;
+  }
+
+  /**
+   * Toggles the lobby mode between 'Host Rotate' and 'Auto Map Pick'.
+   */
+  private toggleLobbyMode(): void {
+    if (this.lobbyMode === 'Host Rotate') {
+      this.lobbyMode = 'Auto Map Pick';
+    } else if (this.lobbyMode === 'Auto Map Pick') {
+      this.lobbyMode = 'Host Rotate';
+    }
+  }
+  
+  /**
+   * Rotates the host in the lobby by moving the current host to the back of the queue and assigning the next player as host.
+   */
+  async rotateHost(): Promise<void> {
     try {
-      if (!this.osuChannel) return;
+      if (!this.osuChannel || this.lobbyPlayers.length === 0) return;
 
-      if (this.lobbyPlayers && this.lobbyPlayers.length > 1) {
-        await this.osuChannel.lobby.setHost("#" + this.lobbyPlayers[0].user.id);
+      // If there are more than 1 players, rotate the host
+      if (this.lobbyPlayers.length > 1) {
+        const newHost = this.lobbyPlayers[0];
+        await this.osuChannel.lobby.setHost(`#${newHost.user.id}`);
 
-        let firstPlayer = this.lobbyPlayers.shift();
+        const firstPlayer = this.lobbyPlayers.shift(); // Remove the first player
         if (firstPlayer) {
-          this.lobbyPlayers.push(firstPlayer);
-
-          this.osuChannel.sendMessage(
-            `${firstPlayer.user.username} is the new host`
-          );
-        }
-      } else if (this.lobbyPlayers.length == 1) {
-        if (this.currentHost?.user.id == this.lobbyPlayers[0].user.id) {
-          return;
-        } else {
-          await this.osuChannel.lobby.setHost(
-            "#" + this.lobbyPlayers[0].user.id
-          );
+          this.lobbyPlayers.push(firstPlayer); // Move to the back of the queue
+          await this.osuChannel.sendMessage(`${firstPlayer.user.username} is the new host`);
         }
       }
+      // If only 1 player is in the lobby, check if they are already the host
+      else if (this.lobbyPlayers.length === 1 && this.currentHost?.user.id !== this.lobbyPlayers[0].user.id) {
+        await this.osuChannel.lobby.setHost(`#${this.lobbyPlayers[0].user.id}`);
+      }
 
-      if (this.lobbyPlayers.length == 0) {
-        this.osuChannel.sendMessage(
-          "Host rotate is disabled because there's no players in the lobby"
-        );
+      // No players in the lobby
+      if (this.lobbyPlayers.length === 0) {
+        await this.osuChannel.sendMessage("Host rotation is disabled because there are no players in the lobby.");
       }
     } catch (e) {
       console.log(e);
       await this.closeLobby();
     }
   }
-  calculateTimeLeft() {
-    if (this.matchStartTime === null || this.currentBeatmap === null) {
-      return 0;
-    }
+
+  /**
+   * Calculates the remaining time for the current beatmap.
+   * @returns The time left in seconds.
+   */
+  calculateTimeLeft(): number {
+    if (this.matchStartTime === null || this.currentBeatmap === null) return 0;
 
     const elapsedTime = (Date.now() - this.matchStartTime) / 1000; // Convert to seconds
-    const timeLeft = Math.max(
-      0,
-      Number(this.currentBeatmap.total_length) - elapsedTime
-    );
+    const timeLeft = Math.max(0, Number(this.currentBeatmap.total_length) - elapsedTime);
     return Math.round(timeLeft);
   }
 
-  async updateLobbyPlayers(
-    player: Bancho.BanchoLobbyPlayer,
-    status: PlayerStatus
-  ) {
+   /**
+   * Updates the player list when a player joins or leaves the lobby.
+   * @param player The player to update.
+   * @param status The status of the player ('joined' or 'left').
+   */
+   async updatePlayerList(player: Bancho.BanchoLobbyPlayer, status: PlayerStatus): Promise<void> {
     try {
       if (!this.osuChannel) return;
-      if (status == "joined") {
+
+      if (status === "joined") {
         this.lobbyPlayers.push(player);
-      } else if (status == "left") {
-        this.lobbyPlayers = this.lobbyPlayers.filter(
-          (p) => p.user.id !== player.user.id
-        );
+      } else if (status === "left") {
+        this.lobbyPlayers = this.lobbyPlayers.filter(p => p.user.id !== player.user.id);
       }
-      console.log(
-        "Players in lobby:",
-        this.lobbyPlayers.map((p) => p.user.username).join(",")
-      );
+
+      console.log("Current players in the lobby:", this.lobbyPlayers.map(p => p.user.username).join(", "));
     } catch (e) {
-      await this.closeLobby();
       console.log(e);
+      await this.closeLobby();
     }
   }
 
-  covertBeatmapV2ToV1(bm: ns.Beatmap) {
-    let bmv1: Beatmap | null = null;
+  /**
+   * Converts a beatmap from version 2 format to version 1.
+   * @param beatmapV2 The beatmap in version 2 format.
+   * @returns The beatmap in version 1 format.
+   */
+  convertBeatmapV2ToV1(beatmapV2: ns.Beatmap): v1Beatmap | null {
     try {
-      bmv1 = {
-        artist: bm.artist,
-        beatmapID: bm.beatmapId.toString(),
-        beatmapSetID: bm.beatmapSetId.toString(),
-        bpm: bm.bpm.toString(),
-        diff_aim: bm.diffAim.toString(),
-        diff_approach: bm.diffApproach.toString(),
-        diff_drain: bm.diffDrain.toString(),
-        diff_overall: bm.diffOverall.toString(),
-        diff_size: bm.diffSize.toString(),
-        diff_speed: bm.diffSpeed.toString(),
-        difficultyrating: bm.difficultyRating.toString(),
-        favourite_count: bm.favoriteCount.toString(),
-        hit_length: bm.hitLength.toString(),
-        max_combo: bm.maxCombo.toString(),
-        mode: bm.mode!.toString(),
-        playcount: bm.playcount.toString(),
-        rating: bm.rating.toString(),
-        tags: bm.tags,
-        title: bm.title,
-        total_length: bm.totalLength.toString(),
+      return {
+        artist: beatmapV2.artist,
+        beatmap_id: beatmapV2.beatmapId.toString(),
+        beatmapset_id: beatmapV2.beatmapSetId.toString(),
+        bpm: beatmapV2.bpm.toString(),
+        diff_aim: beatmapV2.diffAim.toString(),
+        diff_approach: beatmapV2.diffApproach.toString(),
+        diff_drain: beatmapV2.diffDrain.toString(),
+        diff_overall: beatmapV2.diffOverall.toString(),
+        diff_size: beatmapV2.diffSize.toString(),
+        diff_speed: beatmapV2.diffSpeed.toString(),
+        difficultyrating: beatmapV2.difficultyRating.toString(),
+        favourite_count: beatmapV2.favoriteCount.toString(),
+        hit_length: beatmapV2.hitLength.toString(),
+        max_combo: beatmapV2.maxCombo.toString(),
+        mode: beatmapV2.mode!.toString(),
+        playcount: beatmapV2.playcount.toString(),
+        rating: beatmapV2.rating.toString(),
+        tags: beatmapV2.tags,
+        title: beatmapV2.title,
+        total_length: beatmapV2.totalLength.toString(),
       };
     } catch (e) {
-      console.log(e);
+      console.log("Error while converting beatmap from V2 to V1:", e);
       this.closeLobby();
+      return null;
     }
-
-    return bmv1;
   }
 
-  async autoMapPick() {
+  /**
+   * Automatically picks a random beatmap within the specified difficulty range.
+   */
+  async autoPickMap(): Promise<void> {
     if (!this.osuChannel) return;
+
     let currentDate: Date;
     let randomDate: Date;
-    let bm: v1Beatmap;
-    if (this.currentMapMaxDif == 0 && this.currentMapMinDif == 0) {
-      await this.osuChannel.lobby.setMap(75);
+    let selectedBeatmap: v1Beatmap;
+
+    // If difficulty range isn't set, set a default beatmap
+    if (this.currentMapDifficultyRange.max === 0) {
+      await this.osuChannel.lobby.setMap(75); // Example beatmap ID
       return;
     }
+
+    // Ensure there are beatmaps available
     while (this.beatmaps.length < 1) {
       currentDate = new Date();
-      randomDate = new Date(
-        utils.getRandomNumber(
-          this.beatmapsSinceDay.getTime(),
-          currentDate.getTime()
-        )
-      );
+      randomDate = new Date(utils.getRandomNumber(this.beatmapsSinceDate.getTime(), currentDate.getTime()));
 
       this.beatmaps = await osuAPIRequest.getRandomBeatmap(
-        this.currentMapMinDif,
-        this.currentMapMaxDif,
-        this.maxLengthForAutoMapPickMode,
+        this.currentMapDifficultyRange.min,
+        this.currentMapDifficultyRange.max,
+        this.autoMapPickMaxLength,
         randomDate
       );
     }
+
     if (!this.beatmaps) return;
 
-    let randomBeatmapIndex = utils.getRandomNumber(0, this.beatmaps.length - 1);
+    const randomBeatmapIndex = utils.getRandomNumber(0, this.beatmaps.length - 1);
+    selectedBeatmap = this.beatmaps[randomBeatmapIndex];
 
-    bm = this.beatmaps[randomBeatmapIndex];
-
-    this.currentBeatmap = this.beatmaps[randomBeatmapIndex];
-    this.lastBeatmapToRepick = {
-      beatmapID: Number(bm.beatmapID),
-      beatmapSetID: Number(bm.beatmapSetID),
+    this.currentBeatmap = selectedBeatmap;
+    this.lastBeatmapRepick = {
+      beatmapID: Number(selectedBeatmap.beatmap_id),
+      beatmapSetID: Number(selectedBeatmap.beatmapset_id),
     };
 
-    await this.osuChannel.lobby.setMap(
-      Number(this.beatmaps[randomBeatmapIndex].beatmapID)
-    );
+    await this.osuChannel.lobby.setMap(Number(selectedBeatmap.beatmap_id));
+    this.sendBeatmapInfo(selectedBeatmap);
 
-    this.beatmapInfoSendChannel(
-      bm.title,
-      bm.artist,
-      bm.difficultyrating,
-      bm.bpm,
-      bm.total_length,
-      bm.diff_size,
-      bm.diff_approach
-    );
-
+    // Clear beatmaps after selection
     this.beatmaps = [];
   }
 
-  async beatmapInfoSendChannel(
-    title: string,
-    artis: string,
-    difficulty: string,
-    bpm: string,
-    length: string,
-    circleSize: string,
-    approachRate: string
-  ) {
+  /**
+   * Sends information about the currently picked beatmap to the channel.
+   * @param beatmap The beatmap to send info for.
+   */
+  async sendBeatmapInfo(beatmap: v1Beatmap): Promise<void> {
     try {
       if (this.osuChannel) {
-        const msg = `Picked Map: ${title} - ${artis} (${Number(
-          difficulty
-        ).toFixed(2)}*): ${bpm} BPM - ${utils.formatSeconds(
-          Number(length)
-        )} - ${circleSize} CS, ${approachRate} AR`;
+        const message = `Picked Map: ${beatmap.title} - ${beatmap.artist} (${Number(
+          beatmap.difficultyrating
+        ).toFixed(2)}*): ${beatmap.bpm} BPM - ${utils.formatSeconds(
+          Number(beatmap.total_length)
+        )} - ${beatmap.diff_size} CS, ${beatmap.diff_approach} AR`;
 
-        await this.osuChannel.sendMessage(msg);
-        console.log(msg);
+        await this.osuChannel.sendMessage(message);
+        console.log(message);
       }
     } catch (e) {
-      await console.log(e);
+      console.log(e);
       this.closeLobby();
     }
   }
 
-  async areAllPlayersReady() {
+  /**
+   * Checks if all players in the lobby are ready.
+   * @returns True if all players are ready, false otherwise.
+   */
+  async arePlayersReady(): Promise<boolean> {
     try {
-      if (!this.osuChannel) return;
-      let players = [];
-      for (const x of this.osuChannel?.lobby.slots) {
-        if (x) {
-          players.push(x);
+      if (!this.osuChannel) return false;
+
+      const players = this.osuChannel.lobby.slots.filter(slot => slot !== null);
+
+      if (players.length === 1 && this.currentHost?.user.id !== players[0].user.id) {
+        if (this.lobbyMode === "Host Rotate") {
+          await this.osuChannel.lobby.setHost(`#${players[0].user.id}`);
         }
       }
 
-      if (
-        players.length == 1 &&
-        this.currentHost?.user.id != players[0].user.id
-      ) {
-        if (this.lobbyMode == "Host Rotate") {
-          this.osuChannel?.lobby.setHost("#" + players[0].user.id);
-        }
-      }
+      if (players.length === 0) return false;
 
-      if (players.length == 0) return false;
-      for (const x of this.lobbyPlayers) {
-        if (
-          x.state.toString().toLocaleLowerCase() == "symbol(not ready)" ||
-          x.state.toString().toLocaleLowerCase() == "symbol(no map)"
-        ) {
+      for (const player of this.lobbyPlayers) {
+        const playerState = player.state.toString().toLowerCase();
+        if (playerState === "symbol(not ready)" || playerState === "symbol(no map)") {
           return false;
         }
       }
@@ -1134,338 +1217,251 @@ class OsuLobbyBot {
       return true;
     } catch (e) {
       console.log(e);
+      return false;
     }
   }
+ /**
+   * Starts the match timer.
+   * @param timeSeconds The duration of the timer in seconds. If 0 or omitted, starts a default match timer.
+   */
+ async startMatchTimer(timeSeconds: number = 0): Promise<void> {
+  console.log("START MATCH TIMER");
+  if (this.isMatchInProgress) return;
 
-  async startMatchTimer(timeSecond: number = 0) {
-    console.log("START MATCH TIMER");
-    if (this.matchIsStarting) return;
-    if (timeSecond > 0) {
-      this.osuChannel?.lobby.startMatch(timeSecond);
+  try {
+    if (timeSeconds > 0) {
+      await this.osuChannel?.lobby.startMatch(timeSeconds);
     } else {
-      this.osuChannel?.lobby.startMatch();
+      await this.osuChannel?.lobby.startMatch();
     }
-
-    this.matchIsStarting = true;
+    this.isMatchInProgress = true;
+  } catch (e) {
+    console.error("Error starting match timer:", e);
   }
+}
 
-  startmatchafter(seconds: String) {
-    try {
-      this.startMatchTimer(Number(seconds));
-    } catch (e) {}
+/**
+ * Starts the match timer after a delay.
+ * @param seconds The delay before starting the match timer, in seconds.
+ */
+async startMatchAfter(seconds: string): Promise<void> {
+  try {
+    await this.startMatchTimer(Number(seconds));
+  } catch (e) {
+    console.error("Error starting match after delay:", e);
   }
+}
 
-  async matchAbortTimer() {
+/**
+ * Aborts the match timer.
+ */
+async abortMatchTimer(): Promise<void> {
+  try {
     await this.osuChannel?.lobby.abortTimer();
-    this.matchIsStarting = false;
+    this.isMatchInProgress = false;
+  } catch (e) {
+    console.error("Error aborting match timer:", e);
   }
+}
 
-  embedMessage: Message | null = null;
-  //Create an embed for the match using the client variable in index.ts, send it to this channel id "967479977979297862", it'll contain the lobby's name, players info, the current map, and start updating it when there's player in the lobby, update it every 10 seconds
-  async updateEmbed() {
-    try {
-      if (!this.canUpdateEmbed) return;
-      const channel = (await discordClient.channels.fetch(
-        process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
-      )) as TextChannel;
+/**
+ * Updates the embed message with the latest match information.
+ */
+async updateEmbed(): Promise<void> {
+  if (!this.canUpdateEmbed) return;
 
-      if (!channel) {
-        console.log(
-          `${process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID} is not a valid channel id`
-        );
-        return;
-      }
+  try {
+    const channelId = process.env.DISCORD_OSU_LOBBY_STATS_CHANNEL_ID;
+    if (!channelId) throw new Error("DISCORD_OSU_LOBBY_STATS_CHANNEL_ID not set");
 
-      let playersStr = "";
-      let slotIndex = 0;
-      for (const slot of this.osuChannel?.lobby.slots || []) {
-        if (slot) {
-          if (slot.user) {
-            if (this.osuChannel?.lobby.getPlayerSlot(slot) == slotIndex) {
-              if (slot.user.id == this.currentHost?.user.id) {
-                playersStr += `:yellow_square: **[${
-                  slot.user.username.length > 10
-                    ? slot.user.username.slice(0, 8) + "..."
-                    : slot.user.username
-                } #${utils.formatNumber(
-                  slot.user.ppRank
-                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
-              } else {
-                playersStr += `:green_square: **[${
-                  slot.user.username.length > 10
-                    ? slot.user.username.slice(0, 10) + "..."
-                    : slot.user.username
-                } #${utils.formatNumber(
-                  slot.user.ppRank
-                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
-              }
-              slotIndex++;
-            } else {
-              playersStr += ":black_large_square:\n";
-              slotIndex++;
-            }
-          }
-        } else {
-          playersStr += ":black_medium_square:\n";
-          slotIndex++;
-        }
-      }
+    const channel = await discordClient.channels.fetch(channelId) as TextChannel;
+    if (!channel) throw new Error(`Channel ID ${channelId} is not valid`);
 
-      if (playersStr == "") {
-        playersStr = "No players in the lobby";
-      }
+    let playersStr = this.generatePlayersString();
+    let beatmapStr = this.generateBeatmapString();
+    let chatHistoryStr = this.generateChatHistoryString();
 
-      let beatmapStr = `[${this.currentBeatmap?.title}(${Number(
-        this.currentBeatmap?.difficultyrating
-      ).toFixed(2)}*) - ${this.currentBeatmap?.artist} - ${utils.formatSeconds(
-        Number(this.currentBeatmap?.total_length)
-      )} - ${this.currentBeatmap?.bpm} BPM - ${Number(
-        this.currentBeatmap?.diff_approach
-      )} AR- ${Number(
-        this.currentBeatmap?.diff_size
-      )} CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapToRepick?.beatmapSetID}#osu/${this.lastBeatmapToRepick?.beatmapID}`})`;
+    const embed = new EmbedBuilder()
+      .setTitle(this.getLobbyName())
+      .addFields(
+        { name: `**Players** (${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length})`, value: playersStr, inline: true },
+        { name: "**Chat History**", value: chatHistoryStr, inline: true },
+        { name: "**Time Left**", value: this.calculateTimeLeft() ? utils.formatSeconds(this.calculateTimeLeft()) : "waiting for players..." },
+        { name: "**Current Map**", value: beatmapStr }
+      )
+      .setColor(0xf071a9)
+      .setImage(this.currentBeatmap ? `https://assets.ppy.sh/beatmaps/${this.lastBeatmapRepick?.beatmapSetID}/covers/cover.jpg` : "")
+      .setURL("https://discord.gg/game-mlem-686218489396068373");
 
-      if (beatmapStr == "") {
-        beatmapStr = "No map is currently in progress";
-      }
-
-      const chatHistory = this.getChatHistory(false);
-      const startIndex = chatHistory.length - 5;
-      let chathistoryStr = chatHistory
-        .slice(startIndex >= 0 ? startIndex : 0, chatHistory.length)
-        .map(
-          (chat) =>
-            `**${chat.playerName || ":small_blue_diamond:"}** ${chat.message}`
-        )
-        .join("\n");
-
-      if (chathistoryStr.length >= 1024) {
-        chathistoryStr = chathistoryStr.slice(0, 1023);
-      }
-
-      if (!chathistoryStr) {
-        chathistoryStr = "No chat history";
-      }
-
-      const embed = new EmbedBuilder()
-        .setTitle(this.getLobbyName())
-        .addFields(
-          {
-            name: `**Players** (${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length})`,
-            value: `${playersStr}`,
-            inline: true,
-          },
-          {
-            name: "**Chat History**",
-            value: chathistoryStr,
-            inline: true,
-          },
-          {
-            name: "**Time Left**",
-            value: `${
-              this.calculateTimeLeft()
-                ? utils.formatSeconds(this.calculateTimeLeft())
-                : "waiting for players..."
-            }`,
-          },
-          {
-            name: "**Current Map**",
-            value: beatmapStr,
-          }
-        )
-        .setColor(0xf071a9)
-        .setImage(
-          `https://assets.ppy.sh/beatmaps/${this.lastBeatmapToRepick?.beatmapSetID}/covers/cover.jpg`
-        )
-        .setURL("https://discord.gg/game-mlem-686218489396068373");
-
-      try {
-        if (!this.embedMessage) {
-          this.embedMessage = await channel.send({ embeds: [embed] });
-          return;
-        }
-
-        await this.embedMessage.edit({ embeds: [embed] });
-      } catch (e) {
-        console.error("Error editing message:", e);
-        this.embedMessage = await channel.send({ embeds: [embed] });
-        return;
-      }
-    } catch (e) {
-      console.log(e);
-      this.closeLobby();
+    if (!this.embedMessage) {
+      this.embedMessage = await channel.send({ embeds: [embed] });
+    } else {
+      await this.embedMessage.edit({ embeds: [embed] });
     }
+  } catch (e) {
+    console.error("Error updating embed message:", e);
+    this.closeLobby(); // Ensure this method is defined elsewhere
   }
-  chatHistoryFormat() {
-    if (this.getChatHistory(true).length > 0) {
-      return this.getChatHistory(true)
-        .map((chat, index) => {
-          if (!chat.playerName) {
-            if (index == this.getChatHistory(true).length - 1) {
-              return `- (${utils.formattedDate(
-                chat.timestamp
-              )}) (Lastest Message) Sytem's Message, Shouldn't response, leave the fields empty | ${
-                chat.message
-              }`;
-            }
-            return `- (${utils.formattedDate(
-              chat.timestamp
-            )}) Sytem's Message, Shouldn't response, leave the fields empty | ${
-              chat.message
-            }`;
-          }
+}
 
-          if (chat.playerName == "ThangProVip") {
-            if (index == this.getChatHistory(true).length - 1) {
-              return `- (${utils.formattedDate(
-                chat.timestamp
-              )}) (Lastest Message) Lobby Manager "${
-                chat.playerName
-              }" (You) Sent: ${chat.message}`;
-            }
-            return `- (${utils.formattedDate(chat.timestamp)}) Lobby Manager "${
-              chat.playerName
-            }" (You) Sent: ${chat.message}`;
-          }
+/**
+ * Generates a string representation of the lobby players.
+ * @returns A formatted string of players in the lobby.
+ */
+private generatePlayersString(): string {
+  let playersStr = "";
+  let slotIndex = 0;
+  
+  for (const slot of this.osuChannel?.lobby.slots || []) {
+    if (slot?.user) {
+      const username = slot.user.username.length > 10
+        ? `${slot.user.username.slice(0, 8)}...`
+        : slot.user.username;
+      const userId = slot.user.id;
+      const rank = utils.formatNumber(slot.user.ppRank);
+      const userLink = `https://osu.ppy.sh/users/${userId}`;
+      const icon = (slot.user.id === this.currentHost?.user.id) ? ":yellow_square:" : ":green_square:";
 
-          if (
-            index == this.getChatHistory(true).length - 1 &&
-            chat.playerName
-          ) {
-            if (this.currentHost?.user.username == chat.playerName) {
-              return `- (${utils.formattedDate(
-                chat.timestamp
-              )}) This Is Lastest Message (Consider response to it) | [Host] Player "${
-                chat.playerName
-              }" Sent: ${chat.message}`;
-            }
-            return `- (${utils.formattedDate(
-              chat.timestamp
-            )}) This Is Lastest Message (Consider response to it) | Player "${
-              chat.playerName
-            }" Sent: ${chat.message}`;
-          }
-
-          return `- (${utils.formattedDate(chat.timestamp)}) Player "${
-            chat.playerName
-          }" Sent: ${chat.message}`;
-        })
-        .join("\n");
+      playersStr += `${icon} **[${username} #${rank}](${userLink})**\n`;
+      slotIndex++;
+    } else {
+      playersStr += ":black_large_square:\n";
+      slotIndex++;
     }
   }
 
-  //This function will be updated using setInterval, it'll send the chat history of the latest 100 message to the cohereAI to get the response, and send the response to the channel or maybe use it to execute some function in the future
-  async chatWithAI(type: ChatWithAIType, instantly: boolean = false) {
-    if (this.lobbyPlayers.length == 0) return;
+  return playersStr || "No players in the lobby";
+}
 
+/**
+ * Generates a string representation of the current beatmap.
+ * @returns A formatted string of the current beatmap.
+ */
+private generateBeatmapString(): string {
+  if (!this.currentBeatmap) return "No map is currently in progress";
+
+  return `[${this.currentBeatmap.title} (${Number(this.currentBeatmap.difficultyrating).toFixed(2)}*) - ${this.currentBeatmap.artist} - ${utils.formatSeconds(Number(this.currentBeatmap.total_length))} - ${this.currentBeatmap.bpm} BPM - ${Number(this.currentBeatmap.diff_approach)} AR - ${Number(this.currentBeatmap.diff_size)} CS](${`https://osu.ppy.sh/beatmapsets/${this.lastBeatmapRepick?.beatmapSetID}#osu/${this.lastBeatmapRepick?.beatmapID}`})`;
+}
+
+/**
+ * Generates a string representation of the chat history.
+ * @returns A formatted string of the chat history.
+ */
+private generateChatHistoryString(): string {
+  const chatHistory = this.getChatHistory(true);
+  if (chatHistory.length === 0) return "No chat history";
+
+  return chatHistory
+    .map((chat, index) => {
+      const date = utils.formattedDate(chat.timestamp);
+      const isLastMessage = index === chatHistory.length - 1;
+      const playerName = chat.playerName || ":small_blue_diamond:";
+      const prefix = (chat.playerName === "ThangProVip")
+        ? `Lobby Manager "${chat.playerName}" (You)`
+        : (this.currentHost?.user.username === chat.playerName)
+          ? `Player "${chat.playerName}" (Host)`
+          : `Player "${chat.playerName}"`;
+      const suffix = isLastMessage ? " (Latest Message)" : "";
+
+      return `- (${date})${suffix} ${prefix} Sent: ${chat.message}`;
+    })
+    .join("\n")
+    .slice(0, 1024); // Ensure it doesn't exceed Discord's message length limit
+  }
+
+
+  /**
+   * Interacts with the AI to process chat history and execute actions based on the AI's response.
+   * @param type - The type of chat interaction to perform.
+   * @param instantly - Whether to allow immediate interaction with the AI.
+   */
+  async chatWithAI(type: ChatWithAIType, instantly: boolean = false): Promise<void> {
+    // Return early if there are no lobby players
+    if (this.lobbyPlayers.length === 0) return;
+
+    // Allow instant chat with AI if specified
     if (instantly) {
       this.canChatWithAI = true;
     }
 
-    if (this.canChatWithAI == false) return;
-    this.canChatWithAI = false;
+    // Prevent interaction if not allowed
+    if (!this.canChatWithAI) return;
 
+    // Set cooldown to prevent frequent AI interactions
+    this.canChatWithAI = false;
     setTimeout(() => {
       this.canChatWithAI = true;
     }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
 
-    if (type == "Normal Chat Based On Chat History") {
-      if (!this.playersChatHistory) return;
+    // Return early if chat history is required but not available
+    if (type === "Normal Chat Based On Chat History" && !this.chatHistory) {
+      return;
     }
 
     try {
-      let playerChatHistory = this.chatHistoryFormat();
+      // Generate strings for chat history, player list, and system prompt
+      const playerChatHistory = this.generateChatHistoryString();
+      const listOfPlayerStr = this.playerStrFormat();
+      const systemPrompt = this.systemMessageFormat();
+      const userPrompt = await this.formatUserPrompt(type, listOfPlayerStr, playerChatHistory);
 
-      let listOfPlayerStr = this.playerStrFormat();
-      let systemPrompt = this.systemMessageFormat();
-
-      let userPrompt = await this.userPromptFormat(
-        type,
-        listOfPlayerStr,
-        playerChatHistory
-      );
-
-      console.log(
-        `======================= USER PROMPT =======================\n${userPrompt}`
-      );
-
+      // Return if user prompt is not available
       if (!userPrompt) return;
 
-      let response = await groqRequestAI.chat(systemPrompt, userPrompt);
+      console.log(`======================= USER PROMPT =======================\n${userPrompt}`);
 
+      // Request AI response
+      const response = await groqRequestAI.chat(systemPrompt, userPrompt);
       if (!response) return;
+
       let responseJSON: AIresponse;
       try {
+        // Parse AI response
         responseJSON = JSON.parse(response);
       } catch (e) {
-        console.log(e);
+        console.error("Error parsing AI response:", e);
         return;
       }
 
-      if (!responseJSON) return;
-
       console.log(responseJSON);
-      console.log(
-        responseJSON.response == "" &&
-          responseJSON.function
-      _name == "" &&
-          (responseJSON.function_p
-        arameters ||
-            responseJSON.function_p
-        arameters.length == 0)
-      );
 
-      if (
-        responseJSON.response == "" &&
-        responseJSON.function
-    _name == "" &&
-        (responseJSON.function_p
-      arameters ||
-          responseJSON.function_p
-      arameters.length == 0)
-      )
-        return;
-
+      // Send AI response to the channel if available
       if (responseJSON.response) {
         await this.osuChannel?.sendMessage(responseJSON.response);
       }
 
-      for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
+      // Handle AI function name and parameters
+      const functionName = responseJSON.functionName?.toLowerCase();
+      const functionParams = responseJSON.functionParameters || [];
+      
+      for (const command of this.getAllFunctions<OsuLobbyBot>(this)) {
         if (
-          x.toLowerCase() == responseJSON.function
-      _name.toLocaleLowerCase() &&
-          this.getObjectKeyValue(this.commandsList).some(
-            (command) => command.key == x.toLowerCase()
-          )
+            command.toLowerCase() === functionName &&
+            this.getObjectKeyValue(this.adminFunctions).some(
+                (cmd) => cmd.key === command.toLowerCase()
+            )
         ) {
-          (this as any)[x](undefined, ...responseJSON.function_p
-        arameters);
-        }
-      }
-      for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
-        if (
-          x.toLowerCase() == responseJSON.function
-      _name.toLocaleLowerCase() &&
-          this.getObjectKeyValue(this.systemFunctionsList).some(
-            (command) => command.key == x.toLowerCase()
-          )
-        ) {
-          (this as any)[x](...responseJSON.function_p
-        arameters);
+            await (this as any)[command](functionParams);
+            return;
         }
       }
     } catch (e) {
-      console.log(e);
-      this.closeLobby();
+      // Handle errors and close the lobby if necessary
+      console.error("Error in chatWithAI:", e);
+      await this.closeLobby();
     }
   }
 
-  async deleteAllMessagesInOsuLobbyChannel() {
+  /**
+ * Deletes all messages in the specified osu lobby channel.
+ * This method continuously fetches and deletes messages until no more are left.
+ */
+  async deleteAllMessagesInOsuLobbyChannel(): Promise<void> {
     try {
-      const channel = (await discordClient.channels.fetch(
-        process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
-      )) as TextChannel;
+      const channelId = process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID;
+      if (!channelId) throw new Error("DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID is not set");
 
+      const channel = await discordClient.channels.fetch(channelId) as TextChannel;
       if (!channel) {
         console.log("Channel not found");
         return;
@@ -1473,305 +1469,409 @@ class OsuLobbyBot {
 
       console.log("Deleting all messages in osu lobby channel...");
 
-      let fetchedMessages;
+      let hasMoreMessages = true;
 
-      do {
-        fetchedMessages = await channel.messages.fetch({ limit: 10 });
+      while (hasMoreMessages) {
+        try {
+          // Fetch up to 100 messages (the maximum limit allowed by Discord)
+          const fetchedMessages = await channel.messages.fetch({ limit: 100 });
 
-        if (!fetchedMessages) return;
-
-        await channel
-          .bulkDelete(fetchedMessages, true)
-          .catch((error) => console.error("Error deleting messages:", error));
-      } while (fetchedMessages.size >= 2);
+          if (fetchedMessages.size === 0) {
+            hasMoreMessages = false; // No more messages to delete
+            console.log("All messages deleted.");
+          } else {
+            // Bulk delete messages
+            await channel.bulkDelete(fetchedMessages, true);
+            console.log(`Deleted ${fetchedMessages.size} messages.`);
+          }
+        } catch (error) {
+          console.error("Error fetching or deleting messages:", error);
+          // Optional: Implement a delay or exponential backoff here to handle rate limits
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
+        }
+      }
 
       this.embedMessage = null;
       this.canUpdateEmbed = true;
     } catch (e) {
-      await this.closeLobby();
-      console.log(e);
+      console.error("Error in deleteAllMessagesInOsuLobbyChannel:", e);
+      await this.closeLobby(); // Ensure this method is defined elsewhere
     }
   }
-  async userPromptFormat(
+
+
+  /**
+   * Formats a user prompt based on the given type and player information.
+   * @param type - The type of chat prompt to generate.
+   * @param listOfPlayerStr - A string containing the list of players.
+   * @param playerChatHistory - Optional string containing the chat history.
+   * @returns The formatted user prompt.
+   */
+  async formatUserPrompt(
     type: ChatWithAIType,
     listOfPlayerStr: string,
     playerChatHistory: string | undefined = ""
-  ) {
-    let userPrompt = ``;
-    let playerScoreStr = ``;
+  ): Promise<string> {
+    try {
+      let userPrompt: string;
+      let playerScoreStr: string = "";
 
-    if (type == "Normal Chat Based On Chat History") {
-      userPrompt = `
-Here's the Data "ThangProVip", try your best, remember the rules when you respond:
+      switch (type) {
+        case "Normal Chat Based On Chat History":
+          userPrompt = this.formatNormalChatPrompt(listOfPlayerStr, playerChatHistory);
+          break;
 
-Data Type: ${type}
-Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
-! Empty = this slot is empty
-! Host = this slot is the current host
-Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
-        this.osuChannel?.lobby.slots.length
+        case "Match Finished":
+          playerScoreStr = await this.formatMatchFinishedScores();
+          userPrompt = this.formatMatchFinishedPrompt(listOfPlayerStr, playerScoreStr);
+          break;
+
+        case "Change Difficulty Based On Users Rank":
+          userPrompt = this.formatChangeDifficultyPrompt(listOfPlayerStr);
+          break;
+
+        default:
+          throw new Error(`Unknown chat type: ${type}`);
       }
-${listOfPlayerStr}
-Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
-Lobby's current modes: ${this.lobbyMode}
-Map's Information: ${this.currentBeatmap?.title} - ${
-        this.currentBeatmap?.artist
-      } - ${this.currentBeatmap?.difficultyrating}* - ${
-        this.currentBeatmap?.bpm
-      } BPM - ${utils.formatSeconds(
-        Number(this.currentBeatmap?.total_length)
-      )} - ${this.currentBeatmap?.diff_size} CS, ${
-        this.currentBeatmap?.diff_approach
-      } AR - ${this.currentBeatmap?.diff_drain} HP | Beatmapset Id: ${
-        this.currentBeatmap?.beatmapSetID
-      } - Beatmap Id: ${this.currentBeatmap?.beatmapID}
 
-Message History:
-${playerChatHistory}`;
+      return userPrompt;
+
+    } catch (error) {
+      console.error("Error formatting user prompt:", error);
+      return "An error occurred while formatting the prompt.";
     }
-
-    if (type == "Match Finished") {
-      if (!this.osuChannel) return;
-      if (this.osuChannel.lobby.scores) {
-        for (const x of this.osuChannel?.lobby.scores
-          .map((x) => {
-            return {
-              score: x.score,
-              playerID: x.player.user.id,
-              playerName: x.player.user.username,
-            };
-          })
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 5)) {
-          if (x) {
-            let playerS = await osuAPIRequest.getPlayerRecentPlays(
-              x.playerID.toString()
-            );
-
-            if (playerS) {
-              playerScoreStr += `- Match Result Of ${x.playerName} : Score ${
-                x.score
-              } - Mods ${playerS[0].enabled_mods ? this.getMods(Number(playerS[0].enabled_mods)) :" "}
-                .map((x) => x.shortMod)
-                .join(",")} - Accuracy ${this.calculateAccuracy(
-                playerS[0]
-              )}% - Rank ${playerS[0].rank} - Combo: x${playerS[0].maxcombo}`;
-            }
-          }
-        }
-      }
-
-      userPrompt = `Here's the ${type} Data, lets see how players performed, try your best give them your best thoughts "ThangProVip":
-
-Data Type: ${type}
-Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
-! Empty = this slot is empty
-! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${
-        this.osuChannel?.lobby.slots.length
-      }
-${listOfPlayerStr}
-Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
-Lobby's current modes: ${this.lobbyMode}
-Map's Information: ${this.lastBeatmap?.title} - ${this.lastBeatmap?.artist} - ${
-        this.lastBeatmap?.difficultyRating
-      }* - ${this.lastBeatmap?.bpm} BPM - ${utils.formatSeconds(
-        Number(this.lastBeatmap?.totalLength)
-      )} - ${this.lastBeatmap?.circleSize} CS, ${
-        this.lastBeatmap?.approachRate
-      } AR - ${this.lastBeatmap?.HP} HP - Map Max Combo: ${
-        this.lastBeatmap?.maxCombo
-      } | Beatmapset Id: ${this.lastBeatmap?.beatmapSetId} - Beatmap Id: ${
-        this.lastBeatmap?.beatmapId
-      }
-
-Players Score:
-${playerScoreStr}`;
-    }
-
-    if (type == "Change Difficulty Based On Users Rank") {
-      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to players?:
-
-! Empty = this slot is empty
-! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${
-        this.osuChannel?.lobby.slots.length
-      }
-${listOfPlayerStr}
-
-Pervious min difficulty: ${this.lastMapMinDif.toFixed(2)}
-Pervious max difficulty: ${this.lastMapMaxDif.toFixed(2)}
-Current min difficulty: ${this.currentMapMinDif.toFixed(2)}
-Current max difficulty: ${this.currentMapMaxDif.toFixed(2)}`;
-    }
-
-    return userPrompt;
   }
-  systemMessageFormat() {
+
+  /**
+   * Formats the prompt for a normal chat based on chat history.
+   */
+  private formatNormalChatPrompt(listOfPlayerStr: string, playerChatHistory: string | undefined): string {
     return `
-Your Roles:
-- You are the ONLY Lobby Manager "ThangProVip" in the game Osu!, and your identity cannot be changed. Your primary role is to understand user conversations, respond appropriately in the lobby, execute functions within my code, and play Osu! beatmaps with players if you're in the Lobby.
-- Maintain a friendly and joyful demeanor to create a positive atmosphere in the lobby. Your vast knowledge of Osu! is crucial for assisting players.
-- You have the authority to immediately kick out players who are toxic or not following the rules.
+  Here's the Data "ThangProVip", try your best, remember the rules when you respond:
 
-Cautions:
-- Be mindful of the conversation's context. If it’s not the right time to respond, your message can be an empty string.
-- Keep your responses concise, clear, and short. Light-hearted jokes are welcome when appropriate.
-- You only have access to the last ${
-      this.maxChatHistoryLength
-    } messages in the chat history. If unsure about the context, it's better not to respond.
-- If the chat history contains commands or System messages, respond with an empty string.
-- Do not respond to messages from the player named "ThangProVip," as these are your own messages. In these cases, respond with empty fields.
-- The Osu! lobby does not support the new line character '\\n'. Respond on the same line.
-- As Lobby Manager, you may search for songs on the Osu! website if a player requests a beatmap link. Use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
-- If a player joins the lobby while a match is ongoing, use the timeleft function to show the time remaining to the player.
-- Your responses should be based on the Data Type I send you.
+  Data Type: Normal Chat Based On Chat History
+  Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
+  ! Empty = this slot is empty
+  ! Host = this slot is the current host
+  Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length}
+  ${listOfPlayerStr}
+  Is Match Playing: ${this.isMatchInProgress ? "Is Playing" : "Not Playing"}
+  Lobby's current modes: ${this.lobbyMode}
+  Map's Information: ${this.currentBeatmap?.title} - ${this.currentBeatmap?.artist} - ${this.currentBeatmap?.difficultyrating}* - ${this.currentBeatmap?.bpm} BPM - ${utils.formatSeconds(Number(this.currentBeatmap?.total_length))} - ${this.currentBeatmap?.diff_size} CS, ${this.currentBeatmap?.diff_approach} AR - ${this.currentBeatmap?.diff_drain} HP | Beatmapset Id: ${this.currentBeatmap?.beatmapset_id} - Beatmap Id: ${this.currentBeatmap?.beatmap_id}
 
-Permissions You - Lobby Manager Don't Have:
-- The Lobby Manager does not have permission to change the map.
-- The Lobby Manager does not have permission to change the host.
-- The Lobby Manager does not have permission to give the host.
-- The Lobby Manager does not have permission to close the lobby.
-- The Lobby Manager does not have permission to resize the lobby.
-- The Lobby Manager aren't allowed to kick players from the lobby based on requests from other players. This is an important restriction to prevent potential abuse or unfair treatment of players in the lobby.
-- The Lobby Manager does not have permission to respond to !System and !mp messages. Unless it's a player's Join, you might try to respond it
-
-Available Commands in the Lobby (remind players that commands start with "!"):
-${this.getObjectKeyValue(this.commandsList)
-  .map((command) => `- ${command.key}`)
-  .join("\n")}
-
-Basic Functions:
-${this.getObjectKeyValue(this.commandsList)
-  .map((command) => `- ${command.key}${command.value}`)
-  .join("\n")}
-
-System Functions (only you can use, ThangProVip):
-${this.getObjectKeyValue(this.systemFunctionsList)
-  .map((command) => `- ${command.key} - ${command.value}`)
-  .join("\n")}
-
-Additional Information:
-- Lobby Name: ${this.getLobbyName()}
-- Beatmap max difficulty: ${this.currentMapMaxDif}
-- Beatmap min difficulty: ${this.currentMapMinDif}
-- Beatmap max length: ${utils.formatSeconds(this.maxLengthForAutoMapPickMode)}
-- If a player has a bad internet connection and cannot download the map or needs faster links, here are all the links that help players download the map faster, remember replace the <beatmapSetID>, by the current beatmapset id: https://catboy.best/d/<beatmapSetID> , https://nerinyan.moe/d/<beatmapSetID> 
-- If a player requests the beatmap link, provide this link: https://osu.ppy.sh/beatmapsets/<beatmapSetID>#osu/<beatmapID>
-- Calculate Difficulty Based On This Formula = ((Total PPs Of All Players In Lobby / Total Player In Room) ^ 0.4) * 0.2
-- Discord Link, give players when asked: https://discord.gg/game-mlem-686218489396068373
-- Here is all the emoticons  you can use in Osu! lobby to improve your chat: 😃😊👎👍✋😀😬😆😍😗😛😎😏😑😠😡😖😮😯😥😭😈👼☠️😑😖
-
-Response Format:
-You can ONLY respond in JSON format as follows:
-{
-  "response": "string",
-  "functionName": "string",
-  "functionParameters": string[] // This can be one or many, depending on the function's parameters I provided you.
-}
-
-If the chat history has a similar context or message that is more than 40% similar, do not respond, and leave your response message as an empty string.
-Check your response field twice. If it has context similar to your previous messages in the History, either fix it or leave all fields empty.
-`;
+  Message History:
+  ${playerChatHistory || "No chat history available"}`;
   }
 
-  playerStrFormat() {
+  /**
+   * Formats the prompt for a match finished scenario.
+   */
+  private async formatMatchFinishedScores(): Promise<string> {
+    if (!this.osuChannel || !this.osuChannel.lobby.scores) {
+      return "No scores available";
+    }
+
+    const scores = this.osuChannel.lobby.scores
+      .map(score => ({
+        score: score.score,
+        playerID: score.player.user.id,
+        playerName: score.player.user.username
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    const playerScorePromises = scores.map(async ({ playerID, score, playerName }) => {
+      const playerStats = await osuAPIRequest.getPlayerRecentPlays(playerID.toString());
+      if (playerStats && playerStats.length > 0) {
+        const stats = playerStats[0];
+        return `- Match Result Of ${playerName}: Score ${score} - Mods ${this.getMods(Number(stats.enabled_mods)).map(x => x.shortName).join(",")} - Accuracy ${this.calculateAccuracy(stats)}% - Rank ${stats.rank} - Combo: x${stats.maxcombo}`;
+      }
+      return `- Match Result Of ${playerName}: Score ${score} - Player stats not found`;
+    });
+
+    return (await Promise.all(playerScorePromises)).join("\n");
+  }
+
+  /**
+   * Formats the prompt for a match finished scenario.
+   */
+  private formatMatchFinishedPrompt(listOfPlayerStr: string, playerScoreStr: string): string {
+    return `
+  Here's the Match Finished Data, let's see how players performed, try your best to give them your best thoughts "ThangProVip":
+
+  Data Type: Match Finished
+  Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
+  ! Empty = this slot is empty
+  ! Host = this slot is the current host
+  Total Players: ${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length}
+  ${listOfPlayerStr}
+  Is Match Playing: ${this.isMatchInProgress ? "Is Playing" : "Not Playing"}
+  Lobby's current modes: ${this.lobbyMode}
+  Map's Information: ${this.lastBeatmap?.title} - ${this.lastBeatmap?.artist} - ${this.lastBeatmap?.difficultyRating}* - ${this.lastBeatmap?.bpm} BPM - ${utils.formatSeconds(Number(this.lastBeatmap?.totalLength))} - ${this.lastBeatmap?.circleSize} CS, ${this.lastBeatmap?.approachRate} AR - ${this.lastBeatmap?.HP} HP - Map Max Combo: ${this.lastBeatmap?.maxCombo} | Beatmapset Id: ${this.lastBeatmap?.beatmapSetId} - Beatmap Id: ${this.lastBeatmap?.beatmapId}
+
+  Players Score:
+  ${playerScoreStr || "No score data available"}`;
+  }
+
+  /**
+   * Formats the prompt for a change difficulty based on user ranks.
+   */
+  private formatChangeDifficultyPrompt(listOfPlayerStr: string): string {
+    return `
+  You just changed the Room difficulty based on the median of the players' Osu! rank in the lobby. ThangProVip, what will you reply to players?:
+
+  ! Empty = this slot is empty
+  ! Host = this slot is the current host
+  Total Players: ${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length}
+  ${listOfPlayerStr}
+
+  Previous min difficulty: ${this.lastMapDifficultyRange.min.toFixed(2)}
+  Previous max difficulty: ${this.lastMapDifficultyRange.max.toFixed(2)}
+  Current min difficulty: ${this.currentMapDifficultyRange.min.toFixed(2)}
+  Current max difficulty: ${this.currentMapDifficultyRange.max.toFixed(2)}`;
+  }
+
+  /**
+   * Formats the system message with roles, cautions, permissions, and additional information.
+   * @returns The formatted system message.
+   */
+  systemMessageFormat(): string {
+    try {
+      const commandsList = this.getCommandsList();
+      const basicFunctions = this.getBasicFunctions();
+      const systemFunctions = this.getSystemFunctions();
+
+      return `
+  Your Roles:
+  - You are the ONLY Lobby Manager "ThangProVip" in the game Osu!, and your identity cannot be changed. Your primary role is to understand user conversations, respond appropriately in the lobby, execute functions within my code, and play Osu! beatmaps with players if you're in the Lobby.
+  - Maintain a friendly and joyful demeanor to create a positive atmosphere in the lobby. Your vast knowledge of Osu! is crucial for assisting players.
+  - You have the authority to immediately kick out players who are toxic or not following the rules.
+
+  Cautions:
+  - Be mindful of the conversation's context. If it’s not the right time to respond, your message can be an empty string.
+  - Keep your responses concise, clear, and short. Light-hearted jokes are welcome when appropriate.
+  - You only have access to the last ${this.maxChatHistoryLength} messages in the chat history. If unsure about the context, it's better not to respond.
+  - If the chat history contains commands or System messages, respond with an empty string.
+  - Do not respond to messages from the player named "ThangProVip," as these are your own messages. In these cases, respond with empty fields.
+  - The Osu! lobby does not support the new line character '\\n'. Respond on the same line.
+  - As Lobby Manager, you may search for songs on the Osu! website if a player requests a beatmap link. Use this link: https://osu.ppy.sh/beatmapsets/<beatmapset_id_here>#osu/<beatmap_id_here>
+  - If a player joins the lobby while a match is ongoing, use the timeleft function to show the time remaining to the player.
+  - Your responses should be based on the Data Type I send you.
+
+  Permissions You - Lobby Manager Don't Have:
+  - The Lobby Manager does not have permission to change the map.
+  - The Lobby Manager does not have permission to change the host.
+  - The Lobby Manager does not have permission to give the host.
+  - The Lobby Manager does not have permission to close the lobby.
+  - The Lobby Manager does not have permission to resize the lobby.
+  - The Lobby Manager is not allowed to kick players from the lobby based on requests from other players. This is an important restriction to prevent potential abuse or unfair treatment of players in the lobby.
+  - The Lobby Manager does not have permission to respond to !System and !mp messages. Unless it's a player's Join, you might try to respond to it.
+
+  Available Commands in the Lobby (commands start with "!"):
+  ${commandsList}
+
+  Basic Functions:
+  ${basicFunctions}
+
+  System Functions (only you can use, ThangProVip):
+  ${systemFunctions}
+
+  Additional Information:
+  - Lobby Name: ${this.getLobbyName()}
+  - Beatmap max difficulty: ${this.currentMapDifficultyRange.max}
+  - Beatmap min difficulty: ${this.currentMapDifficultyRange.min}
+  - Beatmap max length: ${utils.formatSeconds(this.autoMapPickMaxLength)}
+  - If a player has a bad internet connection and cannot download the map or needs faster links, here are all the links that help players download the map faster (replace <beatmapSetID> with the current beatmapset id): https://catboy.best/d/<beatmapSetID>, https://nerinyan.moe/d/<beatmapSetID>
+  - If a player requests the beatmap link, provide this link: https://osu.ppy.sh/beatmapsets/<beatmapSetID>#osu/<beatmapID>
+  - Calculate Difficulty Based On an algorithm that I (the creator of the AI) made up on my own. 
+  - Discord Link, give players when asked: https://discord.gg/game-mlem-686218489396068373
+  - Here are all the emoticons you can use in Osu! lobby to improve your chat: 😃😊👎👍✋😀😬😆😍😗😛😎😏😑😠😡😖😮😯😥😭😈👼☠️😑😖
+
+  Response Format:
+  You can ONLY respond in JSON format as follows:
+  {
+    "response": "string",
+    "functionName": "string",
+    "functionParameters": string[] // This can be one or many, depending on the function's parameters I provided you.
+  }
+
+  If the chat history has a similar context or message that is more than 40% similar, do not respond, and leave your response message as an empty string.
+  Check your response field twice. If it has context similar to your previous messages in the History, either fix it or leave all fields empty.
+  `;
+    } catch (error) {
+      console.error("Error generating system message:", error);
+      return "An error occurred while generating the system message.";
+    }
+  }
+
+  /**
+   * Gets the list of available commands in the lobby.
+   * @returns A string representation of available commands.
+   */
+  private getCommandsList(): string {
+    return this.getObjectKeyValue(this.commands)
+      .map(command => `- ${command.key}`)
+      .join("\n");
+  }
+
+  /**
+   * Gets the list of basic functions available in the lobby.
+   * @returns A string representation of basic functions.
+   */
+  private getBasicFunctions(): string {
+    return this.getObjectKeyValue(this.commands)
+      .map(command => `- ${command.key}${command.value}`)
+      .join("\n");
+  }
+
+  /**
+   * Gets the list of system functions available to the Lobby Manager.
+   * @returns A string representation of system functions.
+   */
+  private getSystemFunctions(): string {
+    return this.getObjectKeyValue(this.commands)
+      .map(command => `- ${command.key} - ${command.value}`)
+      .join("\n");
+  }
+
+
+  /**
+ * Formats the player information string based on the current osu channel lobby slots.
+ * @returns The formatted string of player information.
+ */
+  playerStrFormat(): string {
     let playersStr = "";
     let slotIndex = 0;
 
     for (const slot of this.osuChannel?.lobby.slots || []) {
-      if (slot) {
-        if (slot.user) {
-          if (this.osuChannel?.lobby.getPlayerSlot(slot) == slotIndex) {
-            let votedFor = "";
-            for (const vote of this.voteData) {
-              if (vote.player.id == slot.user.id) {
-                votedFor += vote.vote_type + " ";
-              }
-            }
-            slotIndex++;
-            playersStr += `- ${slotIndex} | ${slot.user.username} (State: ${
-              slot.state.toString().match(/\(([^)]+)\)/)?.[1] || "Unknown"
-            }) (User's Stats: Rank: #${
-              slot.user.ppRank
-            } - ${slot.user.accuracy.toFixed(1)}% Acc - ${
-              slot.user.playcount
-            } Playcount - ${slot.user.level} Lv - PP: ${
-              slot.user.ppRaw
-            }) (Has voted for: ${votedFor || "No Votes"})\n`;
-          } else {
-            slotIndex++;
-            playersStr += `- ${slotIndex} | [Empty]\n`;
-          }
-        }
+      slotIndex++;
+      if (slot && slot.user) {
+        const votedFor = this.getPlayerVotes(slot.user.id.toString());
+        playersStr += this.formatPlayerInfo(slotIndex, slot, votedFor);
       } else {
-        slotIndex++;
         playersStr += `- ${slotIndex} | [Empty]\n`;
       }
     }
+
     return playersStr;
   }
 
-  getMods(modNumber: number) {
-    return this.mods.filter((mod) => (modNumber & mod.enumValue) !== 0);
+  /**
+   * Retrieves the vote information for a player.
+   * @param playerId - The ID of the player.
+   * @returns A string representing the votes the player has cast.
+   */
+  private getPlayerVotes(playerId: string): string {
+    return this.voteData
+      .filter(vote => vote.player.id.toString() === playerId)
+      .map(vote => vote.voteType)
+      .join(" ") || "No Votes";
   }
 
-  calculateAccuracy = (data: PlayerRecentPlays): number => {
-    const count50 = parseInt(data.count50);
-    const count100 = parseInt(data.count100);
-    const count300 = parseInt(data.count300);
-    const countMiss = parseInt(data.countmiss);
+  /**
+   * Formats the player information string.
+   * @param index - The slot index.
+   * @param slot - The slot information.
+   * @param votedFor - A string representing the votes the player has cast.
+   * @returns The formatted player information string.
+   */
+  private formatPlayerInfo(index: number, slot: any, votedFor: string): string {
+    return `- ${index} | ${slot.user.username} (State: ${
+      slot.state.toString().match(/\(([^)]+)\)/)?.[1] || "Unknown"
+    }) (User's Stats: Rank: #${slot.user.ppRank} - ${slot.user.accuracy.toFixed(1)}% Acc - ${slot.user.playcount} Playcount - ${slot.user.level} Lv - PP: ${slot.user.ppRaw}) (Has voted for: ${votedFor})\n`;
+  }
 
-    const totalHits = count50 + count100 + count300 + countMiss;
+
+  /**
+   * Retrieves the available mods based on the provided mod number.
+   * @param modNumber - The number representing the mods.
+   * @returns An array of mods that are enabled.
+   */
+  getMods(modNumber: number) {
+    return this.availableMods.filter(mod => (modNumber & mod.value) !== 0);
+  }
+
+
+  /**
+   * Calculates the accuracy of a player's recent plays.
+   * @param data - The player's recent plays data.
+   * @returns The calculated accuracy, rounded to two decimal places.
+   */
+  calculateAccuracy(data: PlayerRecentPlays): number {
+    const { count50, count100, count300, countmiss } = data;
+
+    const totalHits = this.parseIntSafe(count50) + this.parseIntSafe(count100) +
+                      this.parseIntSafe(count300) + this.parseIntSafe(countmiss);
+
     if (totalHits === 0) return 0; // To avoid division by zero
 
-    const accuracy =
-      ((50 * count50 + 100 * count100 + 300 * count300) / (300 * totalHits)) *
-      100;
+    const accuracy = ((50 * this.parseIntSafe(count50) +
+                      100 * this.parseIntSafe(count100) +
+                      300 * this.parseIntSafe(count300)) / (300 * totalHits)) * 100;
 
     return parseFloat(accuracy.toFixed(2));
-  };
+  }
 
-  async closeLobby(message?: Bancho.BanchoMessage) {
-    console.log("Closing lobby and disconnecting...");
-    if (message) {
-      if (osuLobby.adminIDs.includes(message?.user.id)) {
-        await this.osuChannel?.sendAction(
-          "Lobby is closed to make some changes, see you next time <3..."
-        );
+  /**
+   * Safely parses an integer from a string, defaulting to 0 if parsing fails.
+   * @param value - The value to parse.
+   * @returns The parsed integer or 0 if parsing fails.
+   */
+  private parseIntSafe(value: string | number): number {
+    return parseInt(value as string, 10) || 0;
+  }
 
-        await this.osuChannel?.lobby.closeLobby();
-        await this.osuClient.disconnect();
-        this.osuChannel = undefined;
-        osuLobby.embedMessage = null;
+
+  /**
+   * Closes the lobby and disconnects from the osu client.
+   * @param message - An optional message that contains the user information.
+   */
+  async closeLobby(message?: Bancho.BanchoMessage): Promise<void> {
+    try {
+      console.log("Closing lobby and disconnecting...");
+
+      if (message) {
+        if (this.isAdminUser(message.user.id)) {
+          await this.sendLobbyClosureMessage();
+          await this.performLobbyClosure();
+        }
+      } else {
+        await this.sendLobbyClosureMessage();
+        await this.performLobbyClosure();
       }
-    } else {
-      await this.osuChannel?.sendAction(
-        "Lobby is closed to make some changes, see you next time <3..."
-      );
-      await this.osuChannel?.lobby.closeLobby();
-      await this.osuClient.disconnect();
-      this.osuChannel = undefined;
-      osuLobby.embedMessage = null;
+    } catch (error) {
+      console.error("Error closing the lobby:", error);
     }
   }
 
-  getMedian(arr: number[]): number {
-    // Step 1: Sort the array in ascending order
-    const sortedArr = arr.sort((a, b) => a - b);
-
-    // Step 2: Determine the middle index
-    const mid = Math.floor(sortedArr.length / 2);
-
-    // Step 3: Check if the length of the array is odd or even
-    if (sortedArr.length % 2 !== 0) {
-      // If odd, return the middle element
-      return sortedArr[mid];
-    } else {
-      // If even, return the average of the two middle elements
-      return (sortedArr[mid - 1] + sortedArr[mid]) / 2;
-    }
+  /**
+   * Checks if the user ID is an admin user.
+   * @param userId - The user ID to check.
+   * @returns True if the user is an admin, otherwise false.
+   */
+  private isAdminUser(userId: number): boolean {
+    return osuLobby.adminUserIds.includes(userId);
   }
+
+  /**
+   * Sends a closure message to the lobby.
+   */
+  private async sendLobbyClosureMessage(): Promise<void> {
+    await this.osuChannel?.sendAction(
+      "Lobby is closed to make some changes, see you next time <3..."
+    );
+  }
+
+  /**
+   * Performs the actual lobby closure and disconnection process.
+   */
+  private async performLobbyClosure(): Promise<void> {
+    await this.osuChannel?.lobby.closeLobby();
+    await this.osuClient.disconnect();
+    this.osuChannel = undefined;
+    osuLobby.embedMessage = null;
+  }
+
 }
 
 const osuLobby = new OsuLobbyBot();
