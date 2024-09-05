@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@huggingface/inference": "^2.8.0",
+    "@kionell/osu-pp-calculator": "^4.0.0",
     "@types/ws": "^8.5.12",
     "axios": "^1.7.5",
     "bancho.js": "^0.10.1",
@@ -31,6 +32,7 @@
     "irc": "^0.5.2",
     "lodash": "^4.17.21",
     "mongodb": "^6.8.0",
-    "openai": "^4.57.2"
+    "openai": "^4.57.2",
+    "osu-classes": "^3.1.0"
   }
 }

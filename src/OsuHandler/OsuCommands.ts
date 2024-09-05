@@ -30,7 +30,9 @@ class OsuCommands {
 
   callbackFunctionsList = {
     getplayerstats:
-      "to get players aren't in the lobby by this function, get a player's stats from Osu!, with the function's parameters: playersName : string, nameOfThePlayerAskedYou: string",
+      "to get players aren't in the lobby by this function, get a player's stats from Osu!, with the function's parameters: playersNameToGetStats : string, nameOfThePlayerAskedYou: string",
+    getplayerrecentplay:
+      "to get the a recent played beatmap of a player from Osu!, with the function's parameters: playersNameToGetTheRecentPlay : string, nameOfThePlayerAskedYou: string",
   };
 
   //   callbackFunctionsList = {
