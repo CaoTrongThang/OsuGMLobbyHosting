@@ -301,9 +301,9 @@ class OsuLobbyBot {
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
         this.chatHistoryHandler(message);
-        
+
         if (
-          !message.user.username != undefined &&
+          message.user.username != undefined &&
           !message.message.startsWith("!") &&
           message.user.username != "ThangProVip"
         ) {
