@@ -1030,6 +1030,9 @@ class OsuLobbyBot {
       )
         return;
       await this.osuChannel.lobby.setMap(75);
+      setTimeout(() => {
+        
+      }, 1000 * 10);
       return;
     }
     while (this.beatmaps.length < 1) {
@@ -1431,14 +1434,14 @@ class OsuLobbyBot {
       let fetchedMessages;
 
       do {
-        fetchedMessages = await channel.messages.fetch({ limit: 10 });
+        fetchedMessages = await channel.messages.fetch({ limit: 20 });
 
         if (!fetchedMessages) return;
 
         await channel
           .bulkDelete(fetchedMessages, true)
           .catch((error) => console.error("Error deleting messages:", error));
-      } while (fetchedMessages.size >= 2);
+      } while (fetchedMessages.size > 1);
 
       this.embedMessage = null;
       this.canUpdateEmbed = true;
