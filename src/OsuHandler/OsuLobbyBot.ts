@@ -1300,7 +1300,7 @@ class OsuLobbyBot {
           }
 
           if (chat.playerName == "ThangProVip") {
-            return `- Lobby Manager "${chat.playerName}" (Don't Respond Your Message) Sent: ${chat.message}`;
+            return `- Lobby Manager "${chat.playerName}" (Don't Respond Or Repeat Your Message) Sent: ${chat.message}`;
           }
 
           if (

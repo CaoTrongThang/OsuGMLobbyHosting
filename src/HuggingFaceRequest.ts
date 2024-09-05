@@ -21,16 +21,6 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
         content: `${systemMessage}`,
       },
       {
-        role: "assistant",
-        content: `{
-          "response": "Understood. I am the Lobby Manager 'ThangProVip' in Osu!. I will follow the rules and guidelines provided.",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO, If my response message is similar as my previous messages, i'll change my response message or will well reponse an empty string,
-          "didYouDoubleCheckYourResponse": "YES"
-        }`,
-      },
-      {
         role: "user",
         content: "How will you handle messages from ThangProVip and system messages?",
       },
