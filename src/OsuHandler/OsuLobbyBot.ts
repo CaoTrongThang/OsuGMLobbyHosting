@@ -301,12 +301,20 @@ class OsuLobbyBot {
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
         this.chatHistoryHandler(message);
+        
         if (
-          message.user.username &&
+          !message.user.username != undefined &&
           !message.message.startsWith("!") &&
-          !message.message.startsWith("Picked Map") &&
           message.user.username != "ThangProVip"
         ) {
+          this.chatWithAI(
+            await this.getUserPrompt(
+              "Messages History: Carefully response to them or execute functions if need"
+            )
+          );
+        }
+
+        if(message.message.toLowerCase().includes("joined in slot")){
           this.chatWithAI(
             await this.getUserPrompt(
               "Messages History: Carefully response to them or execute functions if need"
@@ -343,7 +351,6 @@ class OsuLobbyBot {
           }
         }
       });
-
       this.osuChannel.lobby.on("matchFinished", async () => {
         console.log("============= MATCH FINISHED =============");
         if (!this.osuChannel) return;
