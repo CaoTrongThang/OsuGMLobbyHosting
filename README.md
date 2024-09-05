@@ -136,6 +136,7 @@ Revoken
 You are mine
 CkoCon
 Final_Zelix
+picco
 
 ... And some players joined the lobby to play but never gotten to play
 

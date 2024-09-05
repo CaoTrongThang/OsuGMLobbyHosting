@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import axios from "axios";
-import utils from "../Utils";
 
 dotenv.config();
 
@@ -51,6 +50,38 @@ export type Beatmap = {
   difficultyrating: string;
 };
 
+// Define the type for an event
+type Event = {
+  display_html: string;
+  beatmap_id: number;
+  beatmapset_id: number;
+  date: Date; // UTC date will be converted to a JavaScript Date object
+  epicfactor: number;
+};
+
+// Define the main type for the user
+export type osuUser = {
+  user_id: number;
+  username: string;
+  join_date: Date;
+  playcount: number;
+  ranked_score: number;
+  total_score: number;
+  pp_rank: number;
+  level: number;
+  pp_raw: number;
+  accuracy: number;
+  count_rank_ss: number;
+  count_rank_ssh: number;
+  count_rank_s: number;
+  count_rank_sh: number;
+  count_rank_a: number;
+  country: string;
+  total_seconds_played: number;
+  pp_country_rank: number;
+};
+
+
 class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
@@ -63,7 +94,7 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
-      if(this.beatmapGetCounter > 5){
+      if(this.beatmapGetCounter > 6){
         this.beatmapGetCounter = 0
       }
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
@@ -79,7 +110,7 @@ class OsuAPIRequest {
       let beatmaps: Beatmap[] = response.data;
 
       let filteredBeatmaps;
-      if (this.beatmapGetCounter > 5) {
+      if (this.beatmapGetCounter < 6) {
         filteredBeatmaps = beatmaps.filter(
           (b) =>
             Number(b.playcount) >= 5000 &&
@@ -110,6 +141,23 @@ class OsuAPIRequest {
     }
   }
 
+  async getPlayerStats(userID : string){
+    let url = `https://osu.ppy.sh/api/get_user`;
+    const response = await axios(url, {
+      params: {
+        k: process.env.OSU_API_KEY,
+        m: 0,
+        u: userID,
+      },
+    });
+
+    if (response) {
+      return response.data as osuUser[];
+    } else {
+      return null;
+    }
+  }
+
   async getPlayerRecentPlays(userID: string) {
     let url = `https://osu.ppy.sh/api/get_user_recent`;
     const response = await axios(url, {
@@ -127,6 +175,7 @@ class OsuAPIRequest {
       return null;
     }
   }
+
   async postAccessAPIKey(): Promise<OsuAPIKey | null> {
     try {
       const url = "https://osu.ppy.sh/oauth/token";

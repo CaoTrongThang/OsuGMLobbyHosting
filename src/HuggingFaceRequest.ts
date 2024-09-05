@@ -26,7 +26,7 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "response": "Understood. I am the Lobby Manager 'ThangProVip' in Osu!. I will follow the rules and guidelines provided.",
           "functionName": "",
           "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
+          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO, If my response message is similar as my previous messages, i'll change my response message or will well reponse an empty string,
           "didYouDoubleCheckYourResponse": "YES"
         }`,
       },
@@ -64,12 +64,22 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       },
       {
         role: "assistant",
-        content: `{
+        content: `What will you do when you're about to use one of the callback function?
           "response": "I'll use a friendly tone, offer encouragement, and quickly address any toxic behavior. I'll also provide helpful information about maps and game mechanics when relevant.",
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
           "didYouDoubleCheckYourResponse": "YES"
+        `,
+      },
+      {
+        role: "assistant",
+        content: `{
+          "response": "",
+          "functionName": "",
+          "functionParameters": [],
+          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
+          "didYouDoubleCheckYourResponse": "YES",
         }`,
       },
       {
@@ -91,8 +101,8 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
         content: `${userMessage}`,
       },
     ],
-    max_tokens: 4000,
-    temperature: 0.1,
+    max_tokens: 1700,
+    temperature: 0.2,
     seed: 0,
   });
 
