@@ -808,6 +808,7 @@ class OsuLobbyBot {
         }
       } else if (this.roomMode == "Auto Map Pick") {
         this.roomMode = "Host Rotate";
+        await this.changeDifficultyBaseOnPlayersRank();
         await this.hostRotate();
       }
       this.osuChannel.sendMessage(`Lobby's mode changed to ${this.roomMode}`);
