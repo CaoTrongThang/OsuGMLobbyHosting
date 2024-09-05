@@ -140,8 +140,8 @@ class OsuLobbyBot {
   currentHost?: Banchojs.BanchoLobbyPlayer;
 
   lastBeatmapToRepick: BeatmapIDs | null = null;
-  matchIsPlaying: boolean = false;
-  matchIsStarting = false;
+  isMatchPlaying: boolean = false;
+  isMatchStarting: boolean = false;
 
   lastLobbyName = "";
 
@@ -176,11 +176,13 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       this.updateEmbed();
-      this.osuChannel?.lobby.updateSettings();
+      if(!this.isMatchStarting){
+        this.osuChannel?.lobby.updateSettings();
+      }
     }, 1000 * 12);
 
     setInterval(async () => {
-      if (this.matchIsPlaying) {
+      if (this.isMatchPlaying) {
         this.osuChannel?.lobby.setName(this.getLobbyName());
       }
     }, 1000 * 30);
@@ -268,7 +270,7 @@ class OsuLobbyBot {
             lobbyPlayer.user.id == this.currentHost?.user.id &&
             this.roomMode == "Host Rotate"
           ) {
-            if (this.matchIsPlaying == false && this.lobbyPlayers.length > 0) {
+            if (this.isMatchPlaying == false && this.lobbyPlayers.length > 0) {
               await this.hostRotate();
             } else if (this.lobbyPlayers.length == 0) {
               this.currentHost = undefined;
@@ -368,7 +370,7 @@ class OsuLobbyBot {
             ]);
 
             if (this.lobbyPlayers.length >= 4) {
-              this.osuChannel?.lobby.startMatch(this.startMatchTimeout);
+              this.startMatchTimer(this.startMatchTimeout);
             }
           }
 
@@ -400,9 +402,7 @@ class OsuLobbyBot {
         console.log("MATCH ABORTED");
         if (this.roomMode == "Auto Map Pick" && this.lobbyPlayers.length > 0) {
           if (this.lobbyPlayers.length >= 4) {
-            this.osuChannel?.lobby.startMatch(
-              this.timeoutAfterRoomModeChangeToAutoPick
-            );
+            this.startMatchTimer(this.timeoutAfterRoomModeChangeToAutoPick);
           }
         }
       });
@@ -475,15 +475,11 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("playing", async (state) => {
-        this.matchIsPlaying = state;
-        if (this.osuChannel)
-          if (state) {
-            this.matchIsStarting = false;
-          }
+        if (this.osuChannel) this.isMatchPlaying = state;
         if (this.lobbyPlayers.length === 0 && state) {
           this.osuChannel?.sendMessage("Match aborted because no players");
           this.osuChannel?.lobby.abortMatch();
-          this.matchAbortTimer();
+          this.abortMatchTimer();
         }
       });
 
@@ -592,7 +588,7 @@ class OsuLobbyBot {
   }
 
   async changeDifficultyBaseOnPlayersRank() {
-    if (this.matchIsPlaying) return;
+    if (this.isMatchPlaying) return;
     if (!this.osuChannel) return;
 
     let ranks: number[] = [];
@@ -686,7 +682,7 @@ class OsuLobbyBot {
   ) {
     if (!this.osuChannel) return;
 
-    if (this.matchIsPlaying && voteT != "Abort Match") {
+    if (this.isMatchPlaying && voteT != "Abort Match") {
       await this.osuChannel.sendMessage(
         "Can't Vote when the match is in playing!"
       );
@@ -863,14 +859,12 @@ class OsuLobbyBot {
   }
   async startMatchTimer(timeSecond: number = 0) {
     console.log("START MATCH TIMER");
-    if (this.matchIsStarting) return;
+    this.isMatchStarting
     if (timeSecond > 0) {
-      this.osuChannel?.lobby.startMatch(timeSecond);
+      await this.osuChannel?.lobby.startMatch(timeSecond);
     } else {
-      this.osuChannel?.lobby.startMatch();
+      await this.osuChannel?.lobby.startMatch();
     }
-
-    this.matchIsStarting = true;
   }
   async changelobbymods(
     howManyPlayerWantIt: string,
@@ -1207,9 +1201,9 @@ class OsuLobbyBot {
     } catch (e) {}
   }
 
-  async matchAbortTimer() {
-    await this.osuChannel?.lobby.abortTimer();
-    this.matchIsStarting = false;
+  async abortMatchTimer() {
+    await this.abortMatchTimer();
+    this.isMatchStarting = false;
   }
 
   embedMessage: Message | null = null;
@@ -1298,7 +1292,7 @@ class OsuLobbyBot {
         chathistoryStr = "No chat history";
       }
       let color: ColorResolvable;
-      if (this.matchIsPlaying) {
+      if (this.isMatchPlaying) {
         color = 0x9000bf;
       } else {
         color = 0xf071a9;
@@ -1557,7 +1551,7 @@ Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
-Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
+Is Match Playing: ${this.isMatchPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 Lobby current mods: ${
         this.osuChannel?.lobby.mods
@@ -1628,7 +1622,7 @@ Total Players: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
-Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
+Is Match Playing: ${this.isMatchPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 
 ${lastBm}
@@ -1681,7 +1675,7 @@ Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
-Is Match Playing: ${this.matchIsPlaying ? "Is Playing" : "Not Playing"}
+Is Match Playing: ${this.isMatchPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 
 ${currentBm}
