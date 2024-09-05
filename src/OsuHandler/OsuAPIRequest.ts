@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import axios from "axios";
-import utils from "../Utils";
 
 dotenv.config();
 
@@ -52,9 +51,18 @@ export type Beatmap = {
 };
 
 class OsuAPIRequest {
-  osuAPIKey: OsuAPIKey | null = null;
+  private osuAPIKey: OsuAPIKey | null = null;
+  private beatmapGetCounter: number = 5;
 
-  beatmapGetCounter = 0;
+  /**
+   * Fetches a random beatmap based on difficulty, length, and other parameters.
+   * @param minDifficulty - The minimum difficulty rating.
+   * @param maxDifficulty - The maximum difficulty rating.
+   * @param maxLength - The maximum length of the beatmap.
+   * @param sinceDay - The minimum date for the beatmap's creation.
+   * @param ar - The approach rate threshold.
+   * @returns An array of beatmaps that match the criteria.
+   */
   async getRandomBeatmap(
     minDifficulty: number,
     maxDifficulty: number,
@@ -63,70 +71,97 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
-      if(this.beatmapGetCounter > 10){
-        this.beatmapGetCounter = 0
+      if (this.beatmapGetCounter > 5) {
+        this.beatmapGetCounter = 0;
       }
-      const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
 
+      const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
       const response = await axios.get(OSU_API_URL, {
         params: {
           k: process.env.OSU_API_KEY,
           m: 0,
-          since: sinceDay,
+          since: sinceDay.toISOString(),
           limit: 100,
         },
       });
-      let beatmaps: Beatmap[] = response.data;
 
-      let filteredBeatmaps;
-      if (this.beatmapGetCounter <= 10) {
-        filteredBeatmaps = beatmaps.filter(
-          (b) =>
-            Number(b.playcount) >= 5000 &&
-            Number(b.total_length) <= maxLength &&
-            Number(b.difficultyrating) >= minDifficulty &&
-            Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) > ar &&
-            !b.title.toLowerCase().includes("cut ver") &&
-            !b.title.toLowerCase().includes("tv size")
+      let beatmaps: Beatmap[] = response.data;
+      let filteredBeatmaps: Beatmap[];
+
+      if (this.beatmapGetCounter > 5) {
+        filteredBeatmaps = beatmaps.filter((b) =>
+          this.isBeatmapValid(b, minDifficulty, maxDifficulty, maxLength, ar)
         );
-        this.beatmapGetCounter++;
-        return filteredBeatmaps;
       } else {
-        filteredBeatmaps = beatmaps.filter(
-          (b) =>
-            Number(b.playcount) >= 5000 &&
-            Number(b.total_length) <= maxLength &&
-            Number(b.difficultyrating) >= minDifficulty &&
-            Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) > ar
+        filteredBeatmaps = beatmaps.filter((b) =>
+          this.isBeatmapValid(b, minDifficulty, maxDifficulty, maxLength, ar, false)
         );
-        this.beatmapGetCounter++;
-        return filteredBeatmaps;
       }
+
+      this.beatmapGetCounter++;
+      return filteredBeatmaps;
     } catch (error) {
       console.error("Error fetching beatmaps:", error);
       return [];
     }
   }
 
-  async getPlayerRecentPlays(userID: string) {
-    let url = `https://osu.ppy.sh/api/get_user_recent`;
-    const response = await axios(url, {
-      params: {
-        k: process.env.OSU_API_KEY,
-        m: 0,
-        limit: 1,
-        u: userID,
-      },
-    });
+  /**
+   * Checks if a beatmap is valid based on the given criteria.
+   * @param beatmap - The beatmap to validate.
+   * @param minDifficulty - The minimum difficulty rating.
+   * @param maxDifficulty - The maximum difficulty rating.
+   * @param maxLength - The maximum length of the beatmap.
+   * @param ar - The approach rate threshold.
+   * @param includeTitles - Whether to include beatmaps with specific titles.
+   * @returns True if the beatmap is valid, otherwise false.
+   */
+  private isBeatmapValid(
+    beatmap: Beatmap,
+    minDifficulty: number,
+    maxDifficulty: number,
+    maxLength: number,
+    ar: number,
+    includeTitles: boolean = true
+  ): boolean {
+    return (
+      Number(beatmap.playcount) >= 5000 &&
+      Number(beatmap.total_length) <= maxLength &&
+      Number(beatmap.difficultyrating) >= minDifficulty &&
+      Number(beatmap.difficultyrating) <= maxDifficulty &&
+      Number(beatmap.diff_approach) > ar &&
+      (includeTitles ? !beatmap.title.toLowerCase().includes("cut ver") && !beatmap.title.toLowerCase().includes("tv size") : true)
+    );
+  }
 
-    if (response) {
+  /**
+   * Retrieves recent plays of a player.
+   * @param userID - The ID of the player.
+   * @returns An array of recent plays or null if an error occurs.
+   */
+  async getPlayerRecentPlays(userID: string): Promise<PlayerRecentPlays[] | null> {
+    try {
+      const url = `https://osu.ppy.sh/api/get_user_recent`;
+      const response = await axios.get(url, {
+        params: {
+          k: process.env.OSU_API_KEY,
+          m: 0,
+          limit: 1,
+          u: userID,
+        },
+      });
+
       return response.data as PlayerRecentPlays[];
-    } else {
+    } catch (error) {
+      console.error("Error fetching player recent plays:", error);
       return null;
     }
   }
+
+  /**
+   * Requests a new osu! API key.
+   * @returns The new API key or null if an error occurs.
+   */
   async postAccessAPIKey(): Promise<OsuAPIKey | null> {
     try {
       const url = "https://osu.ppy.sh/oauth/token";
@@ -145,7 +180,6 @@ class OsuAPIRequest {
 
       this.osuAPIKey = response.data;
       console.log("New osu! API key obtained:", this.osuAPIKey);
-
       return this.osuAPIKey;
     } catch (error) {
       console.error("Error fetching osu! API key:", error);
@@ -153,27 +187,38 @@ class OsuAPIRequest {
     }
   }
 
-  async refreshAPIKeyIfNeeded() {
-    if (this.osuAPIKey) {
-      if (this.osuAPIKey?.expires_in < 10000) {
-        console.log("Refreshing osu! API key...");
-        await this.postAccessAPIKey();
-      }
+  /**
+   * Refreshes the osu! API key if it is about to expire.
+   */
+  async refreshAPIKeyIfNeeded(): Promise<void> {
+    if (this.osuAPIKey && this.osuAPIKey.expires_in < 10000) {
+      console.log("Refreshing osu! API key...");
+      await this.postAccessAPIKey();
     }
   }
 
-  //get beatmap's difficulty rating with mods, using osu! API v2 with post request and the data is the number of mods and the endpoint is /beatmaps/{beatmap_id}/attributes
-  async getBeatmapDifficultyRating(beatmap_id: string, mods: number) {
-    const url = `https://osu.ppy.sh/api/v2/beatmaps/${beatmap_id}/attributes`;
-    const response = await axios.post(url, {
-      mods: mods,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.osuAPIKey?.access_token}`,
-      },
-    });
-    console.log("RATING: ", response.data);
-    return response.data;
+  /**
+   * Retrieves the difficulty rating of a beatmap with specific mods.
+   * @param beatmap_id - The ID of the beatmap.
+   * @param mods - The mods to apply.
+   * @returns The difficulty rating of the beatmap.
+   */
+  async getBeatmapDifficultyRating(beatmap_id: string, mods: number): Promise<any> {
+    try {
+      const url = `https://osu.ppy.sh/api/v2/beatmaps/${beatmap_id}/attributes`;
+      const response = await axios.post(url, { mods }, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.osuAPIKey?.access_token}`,
+        },
+      });
+
+      console.log("RATING: ", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching beatmap difficulty rating:", error);
+      return null;
+    }
   }
 }
 

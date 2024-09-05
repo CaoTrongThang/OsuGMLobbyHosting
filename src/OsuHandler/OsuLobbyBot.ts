@@ -12,15 +12,14 @@ require('events').defaultMaxListeners = 15;
 // External libraries
 import * as Bancho from "bancho.js";
 import osuAPIRequest, {
-  Beatmap,
   PlayerRecentPlays,
   Beatmap as v1Beatmap,
 } from "./OsuAPIRequest";
 import utils from "../Utils";
 import { EmbedBuilder, Message, TextChannel } from "discord.js";
 import { discordClient } from "../index";
-import groqRequestAI from "../GroqcloudAIRequest";
 import * as ns from "nodesu";
+import { chatWithHF } from "../HuggingFaceRequest";
 
 
 type lobbyMode = "Auto Map Pick" | "Host Rotate";
@@ -70,7 +69,7 @@ type VoteData = {
 };
 
 type ChatWithAIType =
-  | "Normal Chat Based On Chat History"
+  | "Chat History"
   | "Match Finished"
   | "Change Difficulty Based On Users Rank";
 
@@ -82,8 +81,6 @@ const MIN_PLAYERS_FOR_AUTO_MAP_PICK = 4;
 const MAX_PLAYERS_FOR_AUTO_MAP_PICK = 5;
 
 class OsuLobbyBot {
-
-
 
    // Initialize osu! client
    osuClient = new Bancho.BanchoClient({
@@ -366,7 +363,7 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
 
     this.chatHistoryHandler(message);
-    this.chatWithAI("Normal Chat Based On Chat History");
+    this.chatWithAI("Chat History");
 
     let msg = message.message;
     console.log(`${message.user.username}: ${msg}`);
@@ -712,7 +709,7 @@ class OsuLobbyBot {
     if(!this.osuChannel) return;
     if (this.osuChannel.lobby.beatmapId !== 75 && this.currentMapDifficultyRange.min === 0 && this.currentMapDifficultyRange.max === 0) {
       console.log("There are no players in the room, changing beatmap.");
-      await this.autoMapPick();
+      await this.autoPickMap();
     }
   }
   
@@ -1394,7 +1391,7 @@ private generateChatHistoryString(): string {
     }, 1000 * Number(process.env.AI_REPLY_COOLDOWN_SECONDS));
 
     // Return early if chat history is required but not available
-    if (type === "Normal Chat Based On Chat History" && !this.chatHistory) {
+    if (type === "Chat History" && !this.chatHistory) {
       return;
     }
 
@@ -1411,7 +1408,7 @@ private generateChatHistoryString(): string {
       console.log(`======================= USER PROMPT =======================\n${userPrompt}`);
 
       // Request AI response
-      const response = await groqRequestAI.chat(systemPrompt, userPrompt);
+      const response = await chatWithHF(systemPrompt, userPrompt);
       if (!response) return;
 
       let responseJSON: AIresponse;
@@ -1517,7 +1514,7 @@ private generateChatHistoryString(): string {
       let playerScoreStr: string = "";
 
       switch (type) {
-        case "Normal Chat Based On Chat History":
+        case "Chat History":
           userPrompt = this.formatNormalChatPrompt(listOfPlayerStr, playerChatHistory);
           break;
 

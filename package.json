@@ -11,16 +11,16 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Beware of the fact that this is a fork! it is meant to look over the original repository, not replace it. It is possible that i update this repo, but not likely. **If you want to have the latest features, check out the main repo.**",
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/irc": "^0.5.4",
     "@types/lodash": "^4.17.7",
-    "@types/node": "^22.5.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@huggingface/inference": "^2.8.0",
     "@types/ws": "^8.5.12",
     "axios": "^1.7.5",
     "bancho.js": "^0.10.1",
@@ -30,6 +30,7 @@
     "groq-sdk": "^0.6.1",
     "irc": "^0.5.2",
     "lodash": "^4.17.21",
-    "mongodb": "^6.8.0"
+    "mongodb": "^6.8.0",
+    "openai": "^4.57.2"
   }
 }
