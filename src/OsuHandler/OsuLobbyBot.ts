@@ -174,6 +174,7 @@ class OsuLobbyBot {
     await this.init();
     await this.createAndHandleLobby();
 
+    //Update lobby's stats after 12*
     setInterval(async () => {
       this.updateEmbed();
       if(!this.isMatchStarting){
