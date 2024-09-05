@@ -27,7 +27,6 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages": "This is my initial understanding confirmation, so it's not similar to any previous messages.",
           "didYouDoubleCheckYourResponse": "YES"
         }`,
       },
@@ -42,7 +41,6 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages": "This response combines handling of ThangProVip and system messages, which is a new combination of instructions.",
           "didYouDoubleCheckYourResponse": "YES"
         }`,
       },
@@ -57,7 +55,6 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages": "This response addresses the specific percentage for similarity and provides two clear options for handling similar messages.",
           "didYouDoubleCheckYourResponse": "YES"
         }`,
       },
@@ -72,7 +69,6 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages": "This response focuses on specific actions to maintain a positive atmosphere, which hasn't been directly addressed before.",
           "didYouDoubleCheckYourResponse": "YES"
         }`,
       },
@@ -87,8 +83,7 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "howDidYouKnowYourResponseIsNotSimilarToYourPreviousMessages": "This response provides a comprehensive summary of roles, limitations, and behavior, combining previous instructions into a concise overview.",
-          "didYouDoubleCheckYourResponse": "YES"
+          "didYouDoubleCheckYourResponse": "YES",
         }`,
       },
       {
