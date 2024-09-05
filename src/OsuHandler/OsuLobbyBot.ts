@@ -177,10 +177,8 @@ class OsuLobbyBot {
     //Update lobby's stats after 12*
     setInterval(async () => {
       this.updateEmbed();
-      if(!this.isMatchStarting){
         this.osuChannel?.lobby.updateSettings();
-      }
-    }, 1000 * 12);
+    }, 1000 * 13);
 
     setInterval(async () => {
       if (this.isMatchPlaying) {
@@ -860,7 +858,7 @@ class OsuLobbyBot {
   }
   async startMatchTimer(timeSecond: number = 0) {
     console.log("START MATCH TIMER");
-    this.isMatchStarting
+    this.isMatchStarting = true
     if (timeSecond > 0) {
       await this.osuChannel?.lobby.startMatch(timeSecond);
     } else {
@@ -1196,9 +1194,9 @@ class OsuLobbyBot {
     }
   }
 
-  startmatchafter(seconds: String) {
+  async startmatchafter(seconds: String) {
     try {
-      this.startMatchTimer(Number(seconds));
+      await this.startMatchTimer(Number(seconds));
     } catch (e) {}
   }
 
