@@ -1,24 +1,24 @@
 class OsuCommands {
   commandsList = {
-    rhelp: "//Use it to get all the commands for players",
-    votechangemode: `(player_name: string) //Use it to switch the lobby's mode between "Host Rotate" and "Random Map", the parameter must be the playerName`,
-    voteskipmap: "(player_name: string) //Use it to skip the current map",
-    voteskiphost: "(player_name: string) //Use it to skip the current host",
-    voteabortmatch: "(player_name: string) //Use it to abort the match",
-    votestartmatch: "(player_name: string) //Use it to start the match",
+    rhelp: "// Use it to get all the commands for players",
+    votechangemode: `(player_name: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map", the parameter must be the playerName`,
+    voteskipmap: "(player_name: string) // Use it to skip the current map",
+    voteskiphost: "(player_name: string) // Use it to skip the current host",
+    voteabortmatch: "(player_name: string) // Use it to abort the match",
+    votestartmatch: "(player_name: string) // Use it to start the match",
     timeleft:
-      "//Player can use it to get the time left of the match if it's in progress",
+      "// Player can use it to get the time left of the match if it's in progress",
   };
 
   systemFunctionsList = {
     kickplayer:
-      "kick a player from the lobby, with the function's parameters: playerName: string",
+      "(playerName: string) // kick a player from the lobby, with the function's parameters",
     moveplayertoslot:
-      "move a player to a specific slot from 1 to 16, with the function's parameters: playerName: string, slot: number",
+      "(playerName: string, slot: Number) // move a player to a specific slot from 1 to 16, the slot parameter must be a number",
     startmatchafter:
-      "if the lobby's mode Auto Map Pick and half of them are in state Ready, you should use this function to start match after like 30 seconds, with the function's parameter is: seconds: string",
+      "(timeoutSecond: string) // if the lobby's mode Auto Map Pick and half of them are in state Ready, you should use this function to start match after like 30 seconds, the parameter must be a number",
     changelobbymods:
-      "to change the Lobby's MOD, only use this function only half of the players want to change to that mod in the chat history, can only use 2 mods at a time, with parameters: how_Many_Players_In_The_Chat_Want_To_Change_The_Mod : string, mods : string",
+      "(how_Many_Players_In_The_Chat_Want_To_Change_The_Mod : string, mods : string) // to change the Lobby's MOD, only use this function only half of the players want to change to that mod in the chat history, can only use 3 mods at a time, example: `hd hr dt`",
     donothing: "This function helps you do nothing",
   };
 

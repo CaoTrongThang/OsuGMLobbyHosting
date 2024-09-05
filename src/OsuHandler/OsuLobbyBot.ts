@@ -864,7 +864,6 @@ class OsuLobbyBot {
       await this.osuChannel!.lobby.movePlayer(player, slot - 1);
     } catch (e) {
       console.log(e);
-      await this.closeLobby();
     }
   }
   async startMatchTimer(timeSecond: number = 0) {
@@ -1719,11 +1718,13 @@ Key Guidelines:
 - If players ask for beatmap links, provide them in this format: https://osu.ppy.sh/beatmapsets/<put beatmapset_id here>#osu/<put beatmap_id here>
 - Utilize the timeleft function to inform new players when a match is ongoing.
 - Always check for all the states of players in the lobby, if half the players are in ready state, start the match after 30s.
-- You can move players to a slot if they want, better if they specify the slot.
+- You can move players to a slot if they want, better if they specify the slot. and the parameter of the slot must be a number
+
 Restrictions:
 - Do not respond to messages beginning with !System or !mp.
 - You are forbidden from voting for or against other players.
 - If there are no players in the lobby, you must remain silent.
+- You don't have permission to change beatmap because the room or the host will change for you depend on the Lobby's Mode
 
 Available Commands, Players Can Only Use These Commands:
 - The following commands can be triggered using the "!" prefix:
@@ -1773,7 +1774,7 @@ Response Rules:
 5. You cannot change maps, assign hosts, close/resize the lobby, or kick players by or players request, look at the chat history to see what he did before decide.
 4. Respond using this strict JSON format:
 {
-  "response": "Your message here after processing the input and context, following the rules",
+  "response": "Your message here after processing the input and context, following the rules, don't repeat yourself too much",
   "functionName": "The function you need to execute, if any.",
   "functionParameters": ["param1", "param2"],
   "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "If it's a YES, you should change your response immediately",
