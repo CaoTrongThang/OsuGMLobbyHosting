@@ -1759,6 +1759,7 @@ Useful Links:
   - https://catboy.best/d/<beatmapset_id>
   - https://nerinyan.moe/d/<beatmapset_id>
 - Official Discord: https://discord.gg/game-mlem-686218489396068373
+- Voice Chat: https://discord.gg/tWuRGWgMJ3
 
 Osu! Mods, if you want to remove some mod, you have to put the "-" infront of the mod, example: "-hr" will remove the hr mod, here's the Mods list:
 ${this.mods.map((x) => `- ${x.shortMod} (${x.longMod})`).join("\n")}
