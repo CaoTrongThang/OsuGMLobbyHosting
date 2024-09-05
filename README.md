@@ -31,12 +31,14 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 - **`kickplayer`**: Kicks a player from the lobby.
 - **`moveplayertoslot`**: Moves a player to a specific slot (1-16).
 - **`startmatchafter`**: start match after seconds if half players are ready, usually 30s.
+- **...Many more**
 
 ### Admin Functions
 
 - **`closelobby`**: Closes the lobby.
 - **`kickplayer`**: Kick a players from the lobby.
 - **`banplayer`**: bans a player from the lobby. (todo)
+- **...Many more**
 
 ## Environment Variables
 

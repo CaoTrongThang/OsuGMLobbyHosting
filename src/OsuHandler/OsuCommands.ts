@@ -12,11 +12,11 @@ class OsuCommands {
 
   systemFunctionsList = {
     kickplayer:
-      "(playerName: string) // kick a player from the lobby, with the function's parameters",
+      "(playerName: string) // to kick a player from the lobby if you saw he/her toxic with others, with the function's parameters",
     moveplayertoslot:
-      "(playerName: string, slot: Number) // move a player to a specific slot from 1 to 16, the slot parameter must be a number",
+      "(playerName: string, slot: Number) // to move a player to a specific slot from 1 to 16, the slot parameter must be a number",
     startmatchafter:
-      "(timeoutSecond: string) // if the lobby's mode Auto Map Pick and half of them are in state Ready, you should use this function to start match after like 30 seconds, the parameter must be a number",
+      "(timeoutSecond: string) // if the lobby's mode Auto Map Pick and half of them are in state Ready, you should use this function to start match after like 20-30 seconds depends on if so many players are ready, the parameter must be a number",
     changelobbymods:
       "(how_Many_Players_In_The_Chat_Want_To_Change_The_Mod : string, mods : string) // to change the Lobby's MOD, only use this function only half of the players want to change to that mod in the chat history, can only use 3 mods at a time, example: `hd hr dt`",
     donothing: "This function helps you do nothing",

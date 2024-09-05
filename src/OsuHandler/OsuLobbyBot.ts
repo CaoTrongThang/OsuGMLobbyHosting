@@ -176,14 +176,14 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       this.updateEmbed();
-      this.osuChannel?.lobby.updateSettings()
+      this.osuChannel?.lobby.updateSettings();
     }, 1000 * 12);
 
     setInterval(async () => {
-      if (this.matchIsPlaying){
-        this.osuChannel?.lobby.setName(this.getLobbyName())
-      } 
-    }, 1000 * 30)
+      if (this.matchIsPlaying) {
+        this.osuChannel?.lobby.setName(this.getLobbyName());
+      }
+    }, 1000 * 30);
 
     setInterval(async () => {
       if (this.osuChannel) {
@@ -584,16 +584,11 @@ class OsuLobbyBot {
   }
 
   getLobbyName() {
-    if(this.matchIsPlaying){
-      return `${this.currentMapMinDif.toFixed(
-        1
-      )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(this.calculateTimeLeft())} | Auto - !rhelp`
-    } else {
-      return `${this.currentMapMinDif.toFixed(
-        1
-      )}* - ${this.currentMapMaxDif.toFixed(1)}* | Auto - !rhelp`
-    }
-;
+    return `${this.currentMapMinDif.toFixed(
+      1
+    )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(
+      this.calculateTimeLeft()
+    )} | Auto - !rhelp`;
   }
 
   async changeDifficultyBaseOnPlayersRank() {
@@ -952,10 +947,12 @@ class OsuLobbyBot {
 
         let stats = `Recent Play Of ${userName} In Beatmap ${
           bm[0].title
-        }(${Number(bm[0].difficultyrating).toFixed(
-          2
-        )}*): PP: ${pp.performance.totalPerformance} - Accuracy: ${acc}% - Max Combo: x${u.maxcombo}/${bm[0].max_combo} - Misses: x${u.countmiss}`;
-        
+        }(${Number(bm[0].difficultyrating).toFixed(2)}*): PP: ${
+          pp.performance.totalPerformance
+        } - Accuracy: ${acc}% - Max Combo: x${u.maxcombo}/${
+          bm[0].max_combo
+        } - Misses: x${u.countmiss}`;
+
         prompt = this.generateCallbackPromp(
           askedPlayer,
           `${askedPlayer} asked you to find the latest recent play score of a name called ${userName}, and show everything out`,
@@ -1171,7 +1168,7 @@ class OsuLobbyBot {
   async areAllPlayersReady() {
     try {
       if (!this.osuChannel) return;
-      await this.osuChannel.lobby.updateSettings()
+      await this.osuChannel.lobby.updateSettings();
       let players = [];
       for (const x of this.osuChannel?.lobby.slots) {
         if (x) {
@@ -1718,7 +1715,7 @@ Key Guidelines:
 - If players ask for beatmap links, provide them in this format: https://osu.ppy.sh/beatmapsets/<put beatmapset_id here>#osu/<put beatmap_id here>
 - Utilize the timeleft function to inform new players when a match is ongoing.
 - Always check for all the states of players in the lobby, if half the players are in ready state, start the match after 30s.
-- You can move players to a slot if they want, better if they specify the slot. and the parameter of the slot must be a number
+- You can move players to a slot if they want, and the parameter of the slot must be a number and must be an empty slot
 
 Restrictions:
 - Do not respond to messages beginning with !System or !mp.
@@ -1786,7 +1783,7 @@ Response Rules:
   async playersInLobbyFormat() {
     let playersStr = "";
     let slotIndex = 0;
-    await this.osuChannel?.lobby.updateSettings()
+    await this.osuChannel?.lobby.updateSettings();
     for (const slot of this.osuChannel?.lobby.slots || []) {
       if (slot) {
         if (slot.user) {
