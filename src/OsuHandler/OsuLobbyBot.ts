@@ -470,7 +470,7 @@ class OsuLobbyBot {
         this.voteData = [];
         this.lastBeatmap = this.osuChannel?.lobby.beatmap;
       });
-
+      
       this.osuChannel.lobby.on("playing", async (state) => {
         if (this.osuChannel) this.isMatchPlaying = state;
         if (this.lobbyPlayers.length === 0 && state) {
@@ -1215,7 +1215,9 @@ class OsuLobbyBot {
   }
 
   async abortMatchTimer() {
-    await this.abortMatchTimer();
+    console.log("Aborting timer...");
+    
+    await this.osuChannel?.lobby.abortTimer();
     this.isMatchStarting = false;
   }
 
@@ -1720,12 +1722,11 @@ Key Guidelines:
 - Ignore system messages, commands, or any communication from "ThangProVip" (yourself).
 - Osu! lobby does not support multiline responses. Ensure all replies fit on one line.
 - If players ask for beatmap links, provide them in this format: https://osu.ppy.sh/beatmapsets/<put beatmapset_id here>#osu/<put beatmap_id here>
-- Utilize the timeleft function to inform new players when a match is ongoing.
 - Update all players states if you have to, if half the players are in ready state, start the match after 30s.
 - You can move players to a slot if they want, and the parameter of the slot must be a number and must be an empty slot
 
 Restrictions:
-- Do not respond to messages beginning with !System or !mp.
+- Do not respond to messages include System or !mp.
 - You are forbidden from voting for or against other players.
 - If there are no players in the lobby, you must remain silent.
 - You don't have permission to change beatmap because the room or the host will change for you depend on the Lobby's Mode
@@ -1758,7 +1759,7 @@ Lobby Information:
 - Maximum Beatmap Length: ${utils.formatSeconds(
       this.maxLengthForAutoMapPickMode
     )}
-- Difficulty Calculation Formula: ((Total PPs of Players / Player Count) ^ 0.4) * 0.2
+- Difficulty Calculation Formula: ((Total PPs of Players / Total Player Length In Lobby) ^ 0.4) * 0.2
 - Difficulty recalculates after each match, notify new players accordingly.
 
 Useful Links:
@@ -1768,21 +1769,22 @@ Useful Links:
 - Official Discord: https://discord.gg/game-mlem-686218489396068373
 - Voice Chat: https://discord.gg/tWuRGWgMJ3
 
-Osu! Mods, if you want to remove some mod, you have to put the "-" infront of the mod, example: "-hr" will remove the hr mod, here's the Mods list:
+Osu! Mods, if you want to remove some mods, you have to put the "-" infront of the mod, example: "-hr -dt" will remove the hr and dt mod, and "hr dt" without the "-" will add hr and dt mod, here's the Mods list:
 ${this.mods.map((x) => `- ${x.shortMod} (${x.longMod})`).join("\n")}
 
 Response Rules:
-1. If your upcoming response is more than 60% similar to a previous one, do not respond or alter the context.
+1. If your upcoming response is similar to a previous one, do not respond or alter the context.
 2. Always cross-check your response with the chat history for repetition.
 3. Avoid repeating messages to maintain dynamic conversation.
 4. Your response must be an empty message to player when you're about to use one of the callback function
 5. You cannot change maps, assign hosts, close/resize the lobby, or kick players by or players request, look at the chat history to see what he did before decide.
-4. Respond using this strict JSON format:
+6. Keep your response short and clear, don't repeat your response.
+7. Respond using this strict JSON format:
 {
   "response": "Your message here after processing the input and context, following the rules, don't repeat yourself too much",
   "functionName": "The function you need to execute, if any.",
   "functionParameters": ["param1", "param2"],
-  "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "If it's a YES, you should change your response immediately",
+  "isYourResponseSimilarToYourPreviousMessagesInTheChatHistory": "If it's a YES, you should change your response immediately",
   "didYouDoubleCheckYourResponse": "YES or NO"
 }
   `;
