@@ -175,7 +175,7 @@ class OsuLobbyBot {
     setInterval(async () => {
       this.updateEmbed();
     }, 1000 * 10);
-    
+
     //Update lobby name when the match is playing
     setInterval(async () => {
       if (this.isMatchPlaying) {
@@ -183,6 +183,7 @@ class OsuLobbyBot {
       }
     }, 1000 * 30);
 
+    //...
     setInterval(async () => {
       if (this.osuChannel) {
         await this.osuChannel.lobby.setSize(16);
@@ -191,7 +192,6 @@ class OsuLobbyBot {
         console.log("Reconnecting to the lobby...");
         this.start();
       }
-
       if (this.osuClient.isConnected() && !this.osuChannel) {
         this.createAndHandleLobby();
       }
