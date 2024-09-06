@@ -1,7 +1,7 @@
 class OsuCommands {
   commandsList = {
     rhelp: "// Use it to get all the commands for players",
-    votechangemode: `(player_name: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map", the parameter must be the playerName`,
+    votechangemode: `(player_name: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map" when the lobby has at least 3 players, the parameter must be the playerName`,
     voteskipmap: "(player_name: string) // Use it to skip the current map",
     voteskiphost: "(player_name: string) // Use it to skip the current host",
     voteabortmatch: "(player_name: string) // Use it to abort the match",

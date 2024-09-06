@@ -406,7 +406,6 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("beatmap", async (b) => {
-        this.osuClient.osuApi.multi.getMatch(Number(this.osuChannel?.lobby.id));
         try {
           if (this.roomMode == "Host Rotate") {
             console.log("Host Pick Map");
@@ -420,7 +419,7 @@ class OsuLobbyBot {
                 b.totalLength > this.maxLengthForHostRotate
               ) {
                 if (this.osuChannel) {
-                  //i wanna calculate the beatmap difficulty with DT
+                  //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK
                   if (this.lastBeatmapToRepick) {
                     await Promise.all([
                       await this.osuChannel.sendAction(
@@ -796,7 +795,10 @@ class OsuLobbyBot {
   }
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-
+    if(this.lobbyPlayers.length < 3){
+      this.osuChannel.sendMessage(`The lobby needs at least 3 players to start change the mode`);
+      return;
+    }
     this.voteHandler(message, "Change Mode", playerName);
 
     if (
@@ -869,7 +871,7 @@ class OsuLobbyBot {
     
     let prompt = "";
     try {
-        prompt = "Players are asking you to start the map so you used the updatePlayersStateToStartMatchTimer function, after updated players states, are half of the players ready?, if not, you should respond them, if half of them are ready, you should use function startmatchtimer(timeoutSeconds : string)"
+        prompt = "Players are asking you to start the map so you used the updateplayersstatestostartmatchtimer function, after updated players states, are half of the players ready?, if not, you should respond them, if half of them are ready, you should use function startmatchtimer(timeoutSeconds : string)"
       
       await this.chatWithAI(
         await this.getUserPrompt(
