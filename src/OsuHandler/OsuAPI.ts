@@ -81,6 +81,25 @@ export type osuUser = {
   pp_country_rank: number;
 };
 
+export type PlayerTopPlays = {
+  beatmap_id: string;
+  score_id: string;
+  score: string;
+  maxcombo: string;
+  count50: string;
+  count100: string;
+  count300: string;
+  countmiss: string;
+  countkatu: string;
+  countgeki: string;
+  perfect: string; // 1 = maximum combo of map reached, 0 otherwise
+  enabled_mods: string; // bitwise flag representation of mods used
+  user_id: string;
+  date: string; // in UTC
+  rank: string;
+  pp: string; // float value, 4 decimals
+  replay_available: string; // 1 = replay is available for download, 0 = replay is unavailable
+};
 
 class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
@@ -94,8 +113,8 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
-      if(this.beatmapGetCounter > 6){
-        this.beatmapGetCounter = 0
+      if (this.beatmapGetCounter > 6) {
+        this.beatmapGetCounter = 0;
       }
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
 
@@ -140,10 +159,8 @@ class OsuAPIRequest {
       return [];
     }
   }
-  
-  async getBeatmap(
-    beatmapID: string,
-  ) {
+
+  async getBeatmap(beatmapID: string) {
     try {
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
 
@@ -151,19 +168,18 @@ class OsuAPIRequest {
         params: {
           k: process.env.OSU_API_KEY,
           b: beatmapID,
-          limit: 1
+          limit: 1,
         },
       });
       let beatmaps: Beatmap[] = response.data;
-      return beatmaps
-
+      return beatmaps;
     } catch (error) {
       console.error("Error fetching beatmaps:", error);
       return [];
     }
   }
 
-  async getPlayerStats(userID : string){
+  async getPlayerStats(userID: string) {
     let url = `https://osu.ppy.sh/api/get_user`;
     const response = await axios(url, {
       params: {
@@ -175,6 +191,24 @@ class OsuAPIRequest {
 
     if (response) {
       return response.data as osuUser[];
+    } else {
+      return null;
+    }
+  }
+
+  async getPlayerTopPlays(userID: string) {
+    let url = `https://osu.ppy.sh/api/get_user_best`;
+    const response = await axios(url, {
+      params: {
+        k: process.env.OSU_API_KEY,
+        m: 0,
+        limit: 1,
+        u: userID,
+      },
+    });
+
+    if (response) {
+      return response.data as PlayerTopPlays[];
     } else {
       return null;
     }

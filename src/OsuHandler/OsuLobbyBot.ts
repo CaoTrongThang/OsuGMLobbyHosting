@@ -2,6 +2,7 @@
 
 //TODO CHECK TIME NGOÀI ĐỜI
 //TODO CHECK THỜI TIẾT TẠI KHU VỰC NÀO ĐÓ
+//TODO GET TOP PLAYS
 
 import dotenv from "dotenv";
 
@@ -13,6 +14,7 @@ import osuAPIRequest, {
   Beatmap,
   osuUser,
   PlayerRecentPlays,
+  PlayerTopPlays,
   Beatmap as v1Beatmap,
 } from "./OsuAPI";
 import utils from "../Utils";
@@ -39,7 +41,6 @@ type BeatmapIDs = {
 type PlayerChatHistory = {
   playerName: string;
   message: string;
-  timestamp: Date;
 };
 
 type AIresponse = {
@@ -103,7 +104,7 @@ class OsuLobbyBot {
     // Add more mods as needed
   ];
 
-  lobbyPlayers: Banchojs.BanchoLobbyPlayer[];
+  rotateHostList: Banchojs.BanchoLobbyPlayer[];
 
   playersChatHistory: PlayerChatHistory[] = [];
 
@@ -149,7 +150,7 @@ class OsuLobbyBot {
   playerVotesData: PlayersVotesData[] = [];
 
   constructor() {
-    this.lobbyPlayers = [];
+    this.rotateHostList = [];
     process.on("SIGINT", async () => {
       console.log("DISCONNECTING WITH LOBBY...");
 
@@ -225,10 +226,10 @@ class OsuLobbyBot {
       this.osuChannel.lobby.on("playerJoined", async (lobbyPlayer) => {
         if (!this.osuChannel) return;
         console.log(`+ ${lobbyPlayer.player.user.username} joined the lobby`);
-        await this.updateLobbyPlayers(lobbyPlayer.player, "joined");
+        await this.updateRotateHostList(lobbyPlayer.player, "joined");
 
         if (this.roomMode == "Host Rotate") {
-          if (this.lobbyPlayers.length == 1) {
+          if (this.rotateHostList.length == 1) {
             await this.hostRotate();
           }
         }
@@ -240,25 +241,24 @@ class OsuLobbyBot {
         );
 
         if (this.roomMode == "Auto Map Pick") {
-          if (this.lobbyPlayers.length == 1) {
+          if (this.rotateHostList.length == 1) {
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
           }
         }
-        // if (this.roomMode == "Auto Map Pick") {
-        //   if (this.lobbyPlayers.length >= 4) {
-        //     if (await this.areAllPlayersReady())
-        //       await this.startMatchTimer(this.startMatchTimeout);
-        //   }
-        // }
+        if (this.roomMode == "Auto Map Pick") {
+          if (this.rotateHostList.length > 5) {
+            await this.startMatchTimer(this.startMatchTimeout);
+          }
+        }
       });
 
       this.osuChannel.lobby.on("playerLeft", async (lobbyPlayer) => {
         try {
-          await this.updateLobbyPlayers(lobbyPlayer, "left");
+          await this.updateRotateHostList(lobbyPlayer, "left");
           console.log(`- ${lobbyPlayer.user.username} left the lobby`);
 
-          if (this.lobbyPlayers.length == 0) {
+          if (this.rotateHostList.length == 0) {
             await this.changeLobbyName(true);
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
@@ -268,14 +268,20 @@ class OsuLobbyBot {
             lobbyPlayer.user.id == this.currentHost?.user.id &&
             this.roomMode == "Host Rotate"
           ) {
-            if (this.isMatchPlaying == false && this.lobbyPlayers.length > 0) {
+            if (
+              this.isMatchPlaying == false &&
+              this.rotateHostList.length > 0
+            ) {
               await this.hostRotate();
-            } else if (this.lobbyPlayers.length == 0) {
+            } else if (this.rotateHostList.length == 0) {
               this.currentHost = undefined;
             }
           }
 
-          if (this.lobbyPlayers.length == 1 && this.roomMode == "Host Rotate") {
+          if (
+            this.rotateHostList.length == 1 &&
+            this.roomMode == "Host Rotate"
+          ) {
             this.osuChannel?.sendMessage(
               "You can use !changemode to change to Auto Pick Map mode and chill by yourself wait for players to join"
             );
@@ -284,17 +290,17 @@ class OsuLobbyBot {
           //Check if all players are ready after a player left to start the match
           if (
             this.roomMode == "Auto Map Pick" &&
-            this.lobbyPlayers.length < 5
+            this.rotateHostList.length < 5
           ) {
             if (!this.osuChannel) return;
-            if (await this.areAllPlayersReady()) {
-              await this.startmatchtimer();
+            if (await this.getPlayersStates()) {
+              await this.startMatchTimer();
             }
           } else if (
             this.roomMode == "Auto Map Pick" &&
-            this.lobbyPlayers.length >= 5
+            this.rotateHostList.length >= 5
           ) {
-            await this.startmatchtimer();
+            await this.startMatchTimer();
           }
         } catch (e) {
           await this.closeLobby();
@@ -367,8 +373,8 @@ class OsuLobbyBot {
               await this.autoMapPick(),
             ]);
 
-            if (this.lobbyPlayers.length >= 6) {
-              this.startmatchtimer(this.startMatchTimeout);
+            if (this.rotateHostList.length >= 6) {
+              this.startMatchTimer(this.startMatchTimeout);
             }
           }
 
@@ -398,9 +404,13 @@ class OsuLobbyBot {
 
       this.osuChannel.lobby.on("matchAborted", async () => {
         console.log("MATCH ABORTED");
-        if (this.roomMode == "Auto Map Pick" && this.lobbyPlayers.length > 0) {
-          if (this.lobbyPlayers.length >= 4) {
-            this.startmatchtimer(this.timeoutAfterRoomModeChangeToAutoPick);
+        await this.changeLobbyName();
+        if (
+          this.roomMode == "Auto Map Pick" &&
+          this.rotateHostList.length > 0
+        ) {
+          if (this.rotateHostList.length >= 4) {
+            this.startMatchTimer(this.timeoutAfterRoomModeChangeToAutoPick);
           }
         }
       });
@@ -470,19 +480,25 @@ class OsuLobbyBot {
         this.voteData = [];
         this.lastBeatmap = this.osuChannel?.lobby.beatmap;
       });
-      
+
       this.osuChannel.lobby.on("playing", async (state) => {
-        if (this.osuChannel) this.isMatchPlaying = state;
-        if (this.lobbyPlayers.length === 0 && state) {
+        console.log("PLAYING STATE: ", state);
+
+        this.isMatchPlaying = state;
+        if (this.rotateHostList.length === 0 && state) {
           this.osuChannel?.sendMessage("Match aborted because no players");
           this.osuChannel?.lobby.abortMatch();
           this.abortMatchTimer();
         }
       });
 
+      
       this.osuChannel.lobby.on("allPlayersReady", async () => {
-        if(await this.areAllPlayersReady()){
-          await this.startmatchtimer();
+        let playersStates = await this.getPlayersStates();
+        if (!playersStates) return;
+        if (playersStates.totalPlayer > 0) {
+          if (playersStates.totalReady == playersStates.totalPlayer)
+            await this.startMatchTimer();
         }
       });
     } catch (error) {
@@ -517,7 +533,7 @@ class OsuLobbyBot {
             (command) =>
               message.message.startsWith(command.key) ||
               message.message.includes(command.value)
-          )
+          ) && message.playerName
       );
     }
 
@@ -536,13 +552,11 @@ class OsuLobbyBot {
       this.playersChatHistory.push({
         playerName: message.user.username,
         message: message.message,
-        timestamp: new Date(),
       });
     } else {
       this.playersChatHistory.push({
         playerName: message.user.username,
         message: message.message,
-        timestamp: new Date(),
       });
     }
   }
@@ -552,7 +566,7 @@ class OsuLobbyBot {
       this.osuChannel.sendMessage(
         `${vote.player.username} voted to ${vote.voteType}: ${
           this.voteData.filter((v) => v.voteType == vote.voteType).length
-        }/${this.lobbyPlayers.length} votes`
+        }/${this.rotateHostList.length} votes`
       );
     }
   }
@@ -711,7 +725,7 @@ class OsuLobbyBot {
               vote.player.username == playerName && vote.voteType == voteT
           )
         ) {
-          let player = this.lobbyPlayers.find(
+          let player = this.rotateHostList.find(
             (p) => p.user.username == playerName
           );
           if (!player) return;
@@ -737,7 +751,7 @@ class OsuLobbyBot {
 
     if (
       this.voteData.filter((v) => v.voteType == "Abort Match").length >
-      this.lobbyPlayers.length / 3
+      this.rotateHostList.length / 3
     ) {
       await this.osuChannel.lobby.abortMatch();
       this.osuChannel.sendMessage(`The match is aborted`);
@@ -751,9 +765,9 @@ class OsuLobbyBot {
 
     if (
       this.voteData.filter((v) => v.voteType == "Start Match").length >
-      this.lobbyPlayers.length / 3
+      this.rotateHostList.length / 3
     ) {
-      await this.startmatchtimer();
+      await this.startMatchTimer();
       this.osuChannel.sendMessage(`The match is started`);
       this.resetVote("Start Match");
     }
@@ -767,7 +781,7 @@ class OsuLobbyBot {
 
     if (
       this.voteData.filter((v) => v.voteType == "Skip Host").length >
-      this.lobbyPlayers.length / 3
+      this.rotateHostList.length / 3
     ) {
       await this.hostRotate();
       this.osuChannel.sendMessage(`Host is skipped`);
@@ -778,7 +792,7 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
     if (!(this.roomMode == "Auto Map Pick")) return;
 
-    if (this.lobbyPlayers.length < 1) {
+    if (this.rotateHostList.length < 1) {
       return;
     }
 
@@ -786,7 +800,7 @@ class OsuLobbyBot {
 
     if (
       this.voteData.filter((v) => v.voteType == "Skip Map").length >
-      this.lobbyPlayers.length / 3
+      this.rotateHostList.length / 3
     ) {
       await this.autoMapPick();
       this.osuChannel.sendMessage(`Map is skipped`);
@@ -795,23 +809,25 @@ class OsuLobbyBot {
   }
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-    if(this.lobbyPlayers.length < 3){
-      this.osuChannel.sendMessage(`The lobby needs at least 3 players to start change the mode`);
+    if (this.rotateHostList.length < 3) {
+      this.osuChannel.sendMessage(
+        `The lobby needs at least 3 players to start change the mode`
+      );
       return;
     }
     this.voteHandler(message, "Change Mode", playerName);
 
     if (
       this.voteData.filter((v) => v.voteType == "Change Mode").length >
-      this.lobbyPlayers.length / 3
+      this.rotateHostList.length / 3
     ) {
       this.resetVote("Change Mode");
       if (this.roomMode == "Host Rotate") {
         await this.osuChannel.lobby.clearHost();
         await this.autoMapPick();
         this.roomMode = "Auto Map Pick";
-        if (this.lobbyPlayers.length >= 4) {
-          await this.startmatchtimer(this.startMatchTimeout);
+        if (this.rotateHostList.length >= 4) {
+          await this.startMatchTimer(this.startMatchTimeout);
         }
       } else if (this.roomMode == "Auto Map Pick") {
         this.roomMode = "Host Rotate";
@@ -826,7 +842,9 @@ class OsuLobbyBot {
     if (!this.osuChannel) return;
     if (!playerName) return;
     try {
-      let player = this.lobbyPlayers.find((p) => p.user.username == playerName);
+      let player = this.rotateHostList.find(
+        (p) => p.user.username == playerName
+      );
       if (this.adminIDs.includes(Number(player?.user.id))) {
         await this.osuChannel.sendMessage(
           `You can't kick ${player?.user.username} because he is an admin`
@@ -842,10 +860,11 @@ class OsuLobbyBot {
   }
   async moveplayertoslot(playerName?: string, slot?: any) {
     try {
-      if (!this.osuChannel && !(slot instanceof Number) && !slot && !playerName)
-        return;
+      if (!this.osuChannel) return;
 
-      let player = this.lobbyPlayers.find((p) => p.user.username == playerName);
+      let player = this.rotateHostList.find(
+        (p) => p.user.username == playerName
+      );
       if (!player) return;
 
       if (slot > this.osuChannel!.lobby.slots.length - 1) {
@@ -857,8 +876,8 @@ class OsuLobbyBot {
       console.log(e);
     }
   }
-  async startmatchtimer(timeSecond: number = 0) {
-    this.isMatchStarting = true
+  async startMatchTimer(timeSecond: number = 0) {
+    this.isMatchStarting = true;
     if (timeSecond > 0) {
       await this.osuChannel?.lobby.startMatch(timeSecond);
     } else {
@@ -866,13 +885,25 @@ class OsuLobbyBot {
     }
   }
 
-  async updateplayersstatestostartmatchtimer(){
-    console.log("UPDATING PLAYERS STATES...============================");
-    
+  async updateplayersstatestostartmatchtimer() {
     let prompt = "";
     try {
-        prompt = "Players are asking you to start the map so you used the updateplayersstatestostartmatchtimer function, after updated players states, are half of the players ready?, if not, you should respond them, if half of them are ready, you should use function startmatchtimer(timeoutSeconds : string)"
-      
+      let playerStates = await this.getPlayersStates();
+      if (!playerStates) return;
+      prompt = `Players asked you to start the map, so you used the updateplayersstatestostartmatchtimer function, after updated players states, if half players aren't ready, you must respond an empty string. If half of them are ready, you need to use function startmatchtimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
+        Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startmatchtimer(timeoutSeconds : string):
+        
+        ${
+          playerStates?.totalReady == playerStates?.totalPlayer / 2
+            ? "I think half players are ready"
+            : "I think half players aren't ready"
+        }
+
+        - Total players: ${playerStates?.totalPlayer}
+        - Total ready: ${playerStates?.totalReady}
+
+        `;
+
       await this.chatWithAI(
         await this.getUserPrompt(
           "Required Run Function To Get Data: You required to run functions to get the data for responding to players",
@@ -885,15 +916,9 @@ class OsuLobbyBot {
     }
   }
 
-  async changelobbymods(
-    howManyPlayerWantIt: string,
-    mod1: string = "",
-    mod2: string = "",
-    mod3: string = ""
-  ) {
+  async changelobbymods(mods: string = "", howManyPlayerWantIt: string) {
     try {
-      if (Number(howManyPlayerWantIt) < this.lobbyPlayers.length / 2) return;
-      await this.osuChannel?.lobby.setMods(mod1 + mod2 + mod3, false);
+      await this.osuChannel?.lobby.setMods(mods, true);
     } catch (e) {
       console.log(e);
     }
@@ -931,6 +956,71 @@ class OsuLobbyBot {
     }
   }
 
+  async getusertopplays(userName: string, askedPlayer: string) {
+    let topPlays: PlayerTopPlays[] | null =
+      await osuAPIRequest.getPlayerTopPlays(userName);
+    let prompt = "";
+    try {
+      if (!topPlays || !topPlays[0]) {
+        prompt = this.generateCallbackPromp(
+          askedPlayer,
+          `${askedPlayer} asked you to find the top plays a name called ${userName}`,
+          `You can't not find the top plays of a player called ${userName}, maybe he has no top plays or the name isn't exist`
+        );
+      } else {
+        let stats = ``;
+
+        for (const play of topPlays) {
+          let bm = await osuAPIRequest.getBeatmap(play.beatmap_id);
+          let acc = this.calculateAccuracy(play);
+          let modsStr = play.enabled_mods
+            ? this.getMods(Number(play.enabled_mods))
+                .map((x) => x.shortMod)
+                .join("")
+            : "";
+
+          let pp = await this.calculatePPFromScore.calculate({
+            beatmapId: Number(play.beatmap_id),
+            mods: modsStr,
+            accuracy: acc,
+            count50: Number(play.count50),
+            count100: Number(play.count100),
+            count300: Number(play.count300),
+            countMiss: Number(play.countmiss),
+            totalScore: Number(play.score),
+            percentCombo: Number(play.perfect),
+            maxCombo: Number(play.maxcombo)
+          });
+
+          stats += `Top Play Of ${userName} In Beatmap ${
+            bm[0].title
+          }(${Number(bm[0].difficultyrating).toFixed(
+            2
+          )}*): PP: ${pp.performance.totalPerformance.toFixed(
+            2
+          )} - Accuracy: ${acc}% - Max Combo: x${play.maxcombo}/${
+            bm[0].max_combo
+          } - Misses: x${play.countmiss}\n`;
+        }
+
+        prompt = this.generateCallbackPromp(
+          askedPlayer,
+          `${askedPlayer} asked you to find the top plays of a player called ${userName}, and show everything out, the top is sorted from high to low, top is the highest.`,
+          stats
+        );
+      }
+      await this.chatWithAI(
+        await this.getUserPrompt(
+          "Required Run Function To Get Data: You required to run functions to get the data for responding to players",
+          prompt
+        ),
+        true
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async getplayerrecentplay(userName: string, askedPlayer: string) {
     let user: PlayerRecentPlays[] | null =
       await osuAPIRequest.getPlayerRecentPlays(userName);
@@ -939,7 +1029,7 @@ class OsuLobbyBot {
       if (!user || !user[0]) {
         prompt = this.generateCallbackPromp(
           askedPlayer,
-          `${askedPlayer} asked you to find a name called ${userName}`,
+          `${askedPlayer} asked you to find the most recent play of a player called ${userName}`,
           `You can't not find the user call ${userName}`
         );
       } else {
@@ -956,13 +1046,19 @@ class OsuLobbyBot {
           beatmapId: Number(u.beatmap_id),
           mods: modsStr,
           accuracy: acc,
+          count50: Number(u.count50),
+          count100: Number(u.count100),
+          count300: Number(u.count300),
+          countMiss: Number(u.countmiss),
         });
 
         let stats = `Recent Play Of ${userName} In Beatmap ${
           bm[0].title
-        }(${Number(bm[0].difficultyrating).toFixed(2)}*): PP: ${
-          pp.performance.totalPerformance
-        } - Accuracy: ${acc}% - Max Combo: x${u.maxcombo}/${
+        }(${Number(bm[0].difficultyrating).toFixed(
+          2
+        )}*): PP: ${pp.performance.totalPerformance.toFixed(
+          2
+        )} - Accuracy: ${acc}% - Max Combo: x${u.maxcombo}/${
           bm[0].max_combo
         } - Misses: x${u.countmiss}`;
 
@@ -992,28 +1088,30 @@ class OsuLobbyBot {
     try {
       if (!this.osuChannel) return;
 
-      if (this.lobbyPlayers && this.lobbyPlayers.length > 1) {
-        await this.osuChannel.lobby.setHost("#" + this.lobbyPlayers[0].user.id);
+      if (this.rotateHostList && this.rotateHostList.length > 1) {
+        await this.osuChannel.lobby.setHost(
+          "#" + this.rotateHostList[0].user.id
+        );
 
-        let firstPlayer = this.lobbyPlayers.shift();
+        let firstPlayer = this.rotateHostList.shift();
         if (firstPlayer) {
-          this.lobbyPlayers.push(firstPlayer);
+          this.rotateHostList.push(firstPlayer);
 
           this.osuChannel.sendMessage(
             `${firstPlayer.user.username} is the new host`
           );
         }
-      } else if (this.lobbyPlayers.length == 1) {
-        if (this.currentHost?.user.id == this.lobbyPlayers[0].user.id) {
+      } else if (this.rotateHostList.length == 1) {
+        if (this.currentHost?.user.id == this.rotateHostList[0].user.id) {
           return;
         } else {
           await this.osuChannel.lobby.setHost(
-            "#" + this.lobbyPlayers[0].user.id
+            "#" + this.rotateHostList[0].user.id
           );
         }
       }
 
-      if (this.lobbyPlayers.length == 0) {
+      if (this.rotateHostList.length == 0) {
         this.osuChannel.sendMessage(
           "Host rotate is disabled because there's no players in the lobby"
         );
@@ -1037,22 +1135,22 @@ class OsuLobbyBot {
     return Math.round(timeLeft);
   }
 
-  async updateLobbyPlayers(
+  async updateRotateHostList(
     player: Banchojs.BanchoLobbyPlayer,
     status: PlayerStatus
   ) {
     try {
       if (!this.osuChannel) return;
       if (status == "joined") {
-        this.lobbyPlayers.push(player);
+        this.rotateHostList.push(player);
       } else if (status == "left") {
-        this.lobbyPlayers = this.lobbyPlayers.filter(
+        this.rotateHostList = this.rotateHostList.filter(
           (p) => p.user.id !== player.user.id
         );
       }
       console.log(
         "Players in lobby:",
-        this.lobbyPlayers.map((p) => p.user.username).join(",")
+        this.rotateHostList.map((p) => p.user.username).join(",")
       );
     } catch (e) {
       await this.closeLobby();
@@ -1178,16 +1276,27 @@ class OsuLobbyBot {
     }
   }
 
-  async areAllPlayersReady() {
+  async getPlayersStates() {
     try {
-      if (!this.osuChannel) return;
+      let readyOjbect = {
+        totalReady: 0,
+        totalNotReady: 0,
+        totalNoMap: 0,
+        totalPlayer: 0,
+      };
+
+      if (!this.osuChannel) return readyOjbect;
       await this.osuChannel.lobby.updateSettings();
       let players = [];
+
       for (const x of this.osuChannel?.lobby.slots) {
         if (x) {
           players.push(x);
+          readyOjbect.totalPlayer++;
         }
       }
+
+      if (players.length == 0) return readyOjbect;
 
       if (
         players.length == 1 &&
@@ -1198,17 +1307,17 @@ class OsuLobbyBot {
         }
       }
 
-      if (players.length == 0) return false;
-      for (const x of this.lobbyPlayers) {
-        if (
-          x.state.toString().toLocaleLowerCase() == "symbol(not ready)" ||
-          x.state.toString().toLocaleLowerCase() == "symbol(no map)"
-        ) {
-          return false;
+      for (const x of players) {
+        if (x.state.toString().toLocaleLowerCase() == "symbol(not ready)") {
+          readyOjbect.totalNotReady++;
+        } else if (x.state.toString().toLocaleLowerCase() == "symbol(no map)") {
+          readyOjbect.totalNoMap++;
+        } else if (x.state.toString().toLocaleLowerCase() == "symbol(ready)") {
+          readyOjbect.totalReady++;
         }
       }
 
-      return true;
+      return readyOjbect;
     } catch (e) {
       console.log(e);
     }
@@ -1216,7 +1325,7 @@ class OsuLobbyBot {
 
   async abortMatchTimer() {
     console.log("Aborting timer...");
-    
+
     await this.osuChannel?.lobby.abortTimer();
     this.isMatchStarting = false;
   }
@@ -1316,7 +1425,7 @@ class OsuLobbyBot {
         .setTitle(this.getLobbyName())
         .addFields(
           {
-            name: `**Players** (${this.lobbyPlayers.length}/${this.osuChannel?.lobby.slots.length})`,
+            name: `**Players** (${this.rotateHostList.length}/${this.osuChannel?.lobby.slots.length})`,
             value: `${playersStr}`,
             inline: true,
           },
@@ -1394,7 +1503,7 @@ class OsuLobbyBot {
 
   chatTimeout?: NodeJS.Timeout;
   async chatWithAI(userPrompt: string | undefined, instantly: boolean = false) {
-    if (this.lobbyPlayers.length == 0) return;
+    if (this.rotateHostList.length == 0) return;
 
     if (instantly) {
       this.canChatWithAI = true;
@@ -1452,7 +1561,7 @@ class OsuLobbyBot {
             (command) => command.key == x.toLowerCase()
           )
         ) {
-          await (this as any)[x](...responseJSON.functionParameters);  
+          await (this as any)[x](...responseJSON.functionParameters);
         }
       }
 
@@ -1562,7 +1671,7 @@ Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 ! [No Player] = this slot is empty, you can remove players here
 ! [Host] = this slot is the current host
-Total Players In Slots And Their Information: ${this.lobbyPlayers.length}/${
+Total Players In Slots And Their Information: ${this.rotateHostList.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
@@ -1633,7 +1742,7 @@ Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 ! Empty = this slot is empty
 ! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${
+Total Players: ${this.rotateHostList.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
@@ -1657,7 +1766,7 @@ ${playerScoreStr}`;
 Datatype: ${type}
 ! Empty = this slot is empty
 ! Host = this slot is the current host
-Total Players: ${this.lobbyPlayers.length}/${
+Total Players: ${this.rotateHostList.length}/${
         this.osuChannel?.lobby.slots.length
       }
 ${listOfPlayerStr}
@@ -1686,9 +1795,9 @@ Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
 ! Empty = this slot is empty
 ! Host = this slot is the current host
-Total Players In Slots And Their Information And State: ${this.lobbyPlayers.length}/${
-        this.osuChannel?.lobby.slots.length
-      }
+Total Players In Slots And Their Information And State: ${
+        this.rotateHostList.length
+      }/${this.osuChannel?.lobby.slots.length}
 ${listOfPlayerStr}
 Is Match Playing: ${this.isMatchPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
@@ -1717,6 +1826,7 @@ Rules for players in the lobby:
 Key Guidelines:
 - Keep your responses short, concise, clear, and respectful. Use humor when appropriate, but never at the cost of professionalism.
 - If you're uncertain about how to respond, or if it's not an appropriate moment to reply, return an empty string.
+- If 2 or 3 players want to talk privately , you should be quiet and let them talk, respond an empty string.
 - You can only see the last ${
       this.maxChatHistoryLength
     } chat messages. If the chat is unclear, do not respond.
@@ -1771,6 +1881,7 @@ Useful Links:
 - Voice Chat: https://discord.gg/tWuRGWgMJ3
 
 Osu! Mods, if you want to remove some mods, you have to put the "-" infront of the mod, example: "-hr -dt" will remove the hr and dt mod, and "hr dt" without the "-" will add hr and dt mod, here's the Mods list:
+- freemod means remove all the current mods
 ${this.mods.map((x) => `- ${x.shortMod} (${x.longMod})`).join("\n")}
 
 Response Rules:
@@ -1812,9 +1923,11 @@ Response Rules:
               slot.user.ppRank
             } - Acc: ${slot.user.accuracy.toFixed(1)}%- Playcount: ${
               slot.user.playcount
-            } - ${slot.user.level} Lv - PP: ${slot.user.ppRaw} - Country Code: ${
-              slot.user.country
-            }) (Has voted for: ${votedFor || "No Votes"})\n`;
+            } - ${slot.user.level} Lv - PP: ${
+              slot.user.ppRaw
+            } - Country Code: ${slot.user.country}) (Has voted for: ${
+              votedFor || "No Votes"
+            })\n`;
           } else {
             slotIndex++;
             playersStr += `- ${slotIndex} | [No Player]\n`;

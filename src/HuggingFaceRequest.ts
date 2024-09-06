@@ -7,8 +7,6 @@ dotenv.config();
 // Initialize the Hugging Face Inference client
 
 const apiKey = process.env.HUGGING_FACE_API_KEY;
-const modelEndpoint =
-  "https://api.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
 
 const hf = new HfInference(apiKey);
 
@@ -41,7 +39,7 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       {
         role: "assistant",
         content: `{
-          "response": "If a message is more than 60% similar to my previous responses, I will either rephrase my response to be distinctly different or not respond at all, leaving all fields empty.",
+          "response": "If a message is similar to my previous responses, I will either rephrase my response to be distinctly different or not respond at all, leaving all fields empty.",
           "functionName": "",
           "functionParameters": [],
           "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
@@ -92,7 +90,7 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       },
     ],
     max_tokens: 1700,
-    temperature: 0.2,
+    temperature: 0.3,
     seed: 0,
   });
 
