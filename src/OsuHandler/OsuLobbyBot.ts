@@ -174,7 +174,7 @@ class OsuLobbyBot {
     //Update lobby's stats after 12*
     setInterval(async () => {
       this.updateEmbed();
-    }, 1000 * 13);
+    }, 1000 * 10);
 
     setInterval(async () => {
       if (this.isMatchPlaying) {
@@ -258,6 +258,7 @@ class OsuLobbyBot {
             await this.changeLobbyName(true);
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
+            return;
           }
 
           if (
@@ -303,6 +304,8 @@ class OsuLobbyBot {
           console.log(e);
         }
       });
+
+
       this.osuChannel.lobby.on("host", (host) => {
         if (host) {
           console.log("Host changed to: ", host.user.username);
@@ -401,8 +404,7 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("matchAborted", async () => {
-        console.log("MATCH ABORTED");
-        await this.changeLobbyName();
+        await this.osuChannel?.lobby.setName(this.getLobbyName());
         if (
           this.roomMode == "Auto Map Pick" &&
           this.rotateHostList.length > 0
@@ -480,9 +482,9 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("playing", async (state) => {
-        console.log("PLAYING STATE: ", state);
 
         this.isMatchPlaying = state;
+
         if (this.rotateHostList.length === 0 && state) {
           this.osuChannel?.sendMessage("Match aborted because no players");
           this.osuChannel?.lobby.abortMatch();
@@ -494,6 +496,7 @@ class OsuLobbyBot {
         let playersStates = await this.getPlayersStates();
         if (!playersStates) return;
         if (playersStates.totalPlayer > 0) {
+          
           if (playersStates.totalReady == playersStates.totalPlayer)
             await this.startMatchTimer();
         }
@@ -588,11 +591,24 @@ class OsuLobbyBot {
   }
 
   getLobbyName() {
-    return `${this.currentMapMinDif.toFixed(
-      1
-    )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(
-      this.calculateTimeLeft()
-    )} | Auto - !rhelp`;
+    if(this.rotateHostList.length == 0){
+      return `${this.currentMapMinDif.toFixed(
+        1
+      )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
+    } else {
+      if(this.isMatchPlaying == false){
+        return `${this.currentMapMinDif.toFixed(
+          1
+        )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
+      } else {
+        return `${this.currentMapMinDif.toFixed(
+          1
+        )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(
+          this.calculateTimeLeft()
+        )} | Auto - !rhelp`;
+      }
+      
+    }
   }
 
   async changeDifficultyBaseOnPlayersRank() {
@@ -1281,7 +1297,7 @@ class OsuLobbyBot {
       };
 
       if (!this.osuChannel) return readyOjbect;
-      await this.osuChannel.lobby.updateSettings();
+
       let players = [];
 
       for (const x of this.osuChannel?.lobby.slots) {
@@ -1900,7 +1916,7 @@ Response Rules:
   async playersInLobbyFormat() {
     let playersStr = "";
     let slotIndex = 0;
-    await this.osuChannel?.lobby.updateSettings();
+
     for (const slot of this.osuChannel?.lobby.slots || []) {
       if (slot) {
         if (slot.user) {
