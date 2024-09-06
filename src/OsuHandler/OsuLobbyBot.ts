@@ -1,9 +1,5 @@
 //TODO MAKE BAN FUNCTION
 
-//TODO CHECK TIME NGOÀI ĐỜI
-//TODO CHECK THỜI TIẾT TẠI KHU VỰC NÀO ĐÓ
-//TODO GET TOP PLAYS
-
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -363,6 +359,7 @@ class OsuLobbyBot {
       this.osuChannel.lobby.on("matchFinished", async () => {
         console.log("============= MATCH FINISHED =============");
         if (!this.osuChannel) return;
+
         this.totalMatchPlayedFromStartLobby++;
         try {
           this.lastBeatmap = this.osuChannel.lobby.beatmap;
@@ -396,6 +393,7 @@ class OsuLobbyBot {
             console.error("ERROR: ", e);
             this.closeLobby();
           }
+          await this.osuChannel?.lobby.setName(this.getLobbyName());
         } catch (e) {
           console.error("ERROR: ", e);
           this.closeLobby();
@@ -492,7 +490,6 @@ class OsuLobbyBot {
         }
       });
 
-      
       this.osuChannel.lobby.on("allPlayersReady", async () => {
         let playersStates = await this.getPlayersStates();
         if (!playersStates) return;
@@ -989,14 +986,12 @@ class OsuLobbyBot {
             countMiss: Number(play.countmiss),
             totalScore: Number(play.score),
             percentCombo: Number(play.perfect),
-            maxCombo: Number(play.maxcombo)
+            maxCombo: Number(play.maxcombo),
           });
 
-          stats += `Top Play Of ${userName} In Beatmap ${
-            bm[0].title
-          }(${Number(bm[0].difficultyrating).toFixed(
-            2
-          )}*): PP: ${pp.performance.totalPerformance.toFixed(
+          stats += `Top Play Of ${userName} In Beatmap ${bm[0].title}(${Number(
+            bm[0].difficultyrating
+          ).toFixed(2)}*): PP: ${pp.performance.totalPerformance.toFixed(
             2
           )} - Accuracy: ${acc}% - Max Combo: x${play.maxcombo}/${
             bm[0].max_combo
