@@ -262,9 +262,9 @@ class OsuLobbyBot {
           console.log(`- ${lobbyPlayer.user.username} left the lobby`);
 
           if (this.rotateHostList.length == 0) {
-            await this.osuChannel?.lobby.setName(this.getLobbyName());
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
+            await this.osuChannel?.lobby.setName(this.getLobbyName());
             return;
           }
 
@@ -297,7 +297,7 @@ class OsuLobbyBot {
             this.rotateHostList.length < 5
           ) {
             if (!this.osuChannel) return;
-            let state = await this.getPlayersStates()
+            let state = await this.getPlayersStates();
             if (state?.totalReady == state?.totalPlayer) {
               await this.startmatchtimer();
             }
@@ -433,7 +433,11 @@ class OsuLobbyBot {
             // Check if the beatmap is valid
             if (b != null) {
               if (
-                !this.checkBeatmapMeetRequirements(b.difficultyRating, Number(b.mode), b.totalLength)
+                !this.checkBeatmapMeetRequirements(
+                  b.difficultyRating,
+                  Number(b.mode),
+                  b.totalLength
+                )
               ) {
                 if (this.osuChannel) {
                   //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK
@@ -541,8 +545,8 @@ class OsuLobbyBot {
       totalLength > this.maxLengthForHostRotate
     ) {
       return false;
-    } 
-    
+    }
+
     return true;
   }
   getChatHistory(filter: boolean) {
@@ -905,12 +909,14 @@ class OsuLobbyBot {
   }
 
   async changebeatmap(beatmapId: string) {
-    if(!this.osuChannel) return;
-    try{
-    await this.osuChannel.lobby.setMap(Number(beatmapId))
-    }catch(e){
+    if (!this.osuChannel) return;
+    try {
+      await this.osuChannel.lobby.setMap(Number(beatmapId));
+    } catch (e) {
       console.log(e);
-      await this.osuChannel.sendMessage("Couldn't change beatmap, something is wrong")
+      await this.osuChannel.sendMessage(
+        "Couldn't change beatmap, something is wrong"
+      );
     }
   }
 
@@ -922,28 +928,40 @@ class OsuLobbyBot {
       } catch (e) {
         beatmap = null;
       }
-      let prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID`
-      if(!beatmap){
-        prompt 
+      let prompt = ``;
+      if (!beatmap || !beatmap[0]) {
+        prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID`;
       } else {
-        prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you got all the data below, if you think the map fit all the requirements, you can use changebeatmap(beatmapID : string), also you can have some response for the map, like the map info or what's this song about, just for fun:
-
-        ${this.checkBeatmapMeetRequirements(Number(beatmap[0].difficultyrating), Number(beatmap[0].mode), Number(beatmap[0].total_length)) ? "I think the beatmap met all the requirements" : "I think the beatmap didn't meet all the requirements"}
-  
+        prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you got all the data below, if you think the map fit all the requirements, you can use changebeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
+        
         Lobby's Requirements:
-        - Min Difficulty: ${this.currentMapMinDif}
-        - Max Difficulty: ${this.currentMapMaxDif}
-        - Max Length: ${this.roomMode == "Auto Map Pick" ? this.maxLengthForAutoMapPickMode : this.maxLengthForHostRotate}
+        - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
+        - Max Difficulty: ${this.currentMapMaxDif.toFixed(2)}
+        - Max Length: ${
+          this.roomMode == "Auto Map Pick"
+            ? this.maxLengthForAutoMapPickMode
+            : this.maxLengthForHostRotate
+        }
   
         Searched Beatmap's Info:
+        - Beatmap's ID: ${beatmap[0].beatmap_id}
         - Beatmap's Title: ${beatmap[0].title}
         - Beatmap's Artist: ${beatmap[0].artist}
-        - Beatmap's Difficulty: ${beatmap[0].difficultyrating}
+        - Beatmap's Difficulty: ${Number(beatmap[0].difficultyrating).toFixed(2)}
         - Beatmap's Length: ${beatmap[0].hit_length}
+
+        ${
+          this.checkBeatmapMeetRequirements(
+            Number(beatmap[0].difficultyrating),
+            Number(beatmap[0].mode),
+            Number(beatmap[0].total_length)
+          )
+            ? "It seems like the beatmap met all the requirements"
+            : "I think the beatmap didn't meet all the requirements, tell the players why"
+        }
         `;
-  
       }
-     
+
       await this.chatWithAI(
         await this.getUserPrompt(
           "Required Run Function To Get Data: You required to run functions to get the data for responding to players",
@@ -1001,15 +1019,15 @@ class OsuLobbyBot {
       if (!user || !user[0]) {
         prompt = this.generateCallbackPromp(
           askedPlayer,
-          `${askedPlayer} asked you to find a name called ${userName}`,
+          `${askedPlayer} asked you to find a stats of a player called ${userName}`,
           `You can't not find the user call ${userName}`
         );
       } else {
         let u = user[0];
-        let stats = `Username: ${u.username}, Rank: #${u.pp_rank}, Accuracy: ${u.accuracy}, Level: ${u.level}, Ranked Score: ${u.ranked_score}, Total Score: ${u.total_score}, Join Date: ${u.join_date}, Count Rank SS: ${u.count_rank_ss}, Count Rank SSH: ${u.count_rank_ssh}, Count Rank S: ${u.count_rank_s}, Count Rank SH: ${u.count_rank_sh}, Count Rank A: ${u.count_rank_a}, Play Count: ${u.playcount}, PP Countr Rank: ${u.pp_country_rank}`;
+        let stats = `Username: ${u.username}, Rank: #${u.pp_rank}, PP: ${u.pp_raw}, Accuracy: ${u.accuracy}, Level: ${u.level}, Ranked Score: ${u.ranked_score}, Total Score: ${u.total_score}, Join Date: ${u.join_date}, Count Rank SS: ${u.count_rank_ss}, Count Rank SSH: ${u.count_rank_ssh}, Count Rank S: ${u.count_rank_s}, Count Rank SH: ${u.count_rank_sh}, Count Rank A: ${u.count_rank_a}, Play Count: ${u.playcount}`;
         prompt = this.generateCallbackPromp(
           askedPlayer,
-          `${askedPlayer} asked you to find a name called ${user[0].username}`,
+          `${askedPlayer} asked you to find a stats of a player called ${user[0].username}`,
           stats
         );
       }
@@ -1148,7 +1166,7 @@ class OsuLobbyBot {
   }
 
   generateCallbackPromp(askedPlayer: string, reason: string, data: string) {
-    return `You made this callback because: ${reason}\nThe User Asked You Do To The Callback: ${askedPlayer}\nHere is the data you got from the callback: ${data}`;
+    return `You used this function because: ${reason}\nThe player asked you to do: ${askedPlayer}\nHere is the data you got from the callback: ${data}`;
   }
 
   async hostRotate() {
@@ -1844,8 +1862,10 @@ ${listOfPlayerStr}
 Is Match Playing: ${this.isMatchPlaying ? "Is Playing" : "Not Playing"}
 Lobby's current modes: ${this.roomMode}
 
+${callbackDataAndPrompt}
 
-${callbackDataAndPrompt}`;
+Message History: (Message History will be listed from newest to latest, the first message will be the oldest message and the last message (at the bottom) will be the latest message, )
+${playerChatHistory}`;
     }
 
     return userPrompt;
@@ -1908,7 +1928,9 @@ ${this.getObjectKeyValue(osuCommands.callbackFunctionsList)
 
 Lobby Information:
 - Lobby Name: ${this.getLobbyName()}
-- Beatmap Difficulty Range: ${this.currentMapMinDif} - ${this.currentMapMaxDif}
+- Beatmap Difficulty Range: Min ${this.currentMapMinDif} - Max ${
+      this.currentMapMaxDif
+    }
 - Maximum Beatmap Length: ${utils.formatSeconds(
       this.maxLengthForAutoMapPickMode
     )}
@@ -1917,8 +1939,8 @@ Lobby Information:
 
 Useful Links:
 - Quick beatmap downloads: <beatmapset_id> = the beatmapset_id, maybe of the current beatmap
-  - https://catboy.best/d/<beatmapset_id>
   - https://nerinyan.moe/d/<beatmapset_id>
+  - https://catboy.best/d/<beatmapset_id>
 - Official Discord: https://discord.gg/game-mlem-686218489396068373
 - Voice Chat: https://discord.gg/tWuRGWgMJ3
 

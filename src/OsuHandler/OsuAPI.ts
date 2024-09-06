@@ -186,8 +186,7 @@ class OsuAPIRequest {
       const response = await axios.get(OSU_API_URL, {
         params: {
           k: process.env.OSU_API_KEY,
-          b: beatmapID,
-          limit: 1
+          b: beatmapID
         },
       });
       let beatmaps: Beatmap[] = response.data;

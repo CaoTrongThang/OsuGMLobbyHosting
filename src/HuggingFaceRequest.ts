@@ -91,7 +91,7 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
     ],
     max_tokens: 1700,
     temperature: 0.3,
-    seed: 0,
+    seed: 42,
   });
 
   return out.choices[0].message.content;

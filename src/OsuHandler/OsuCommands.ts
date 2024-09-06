@@ -38,7 +38,7 @@ class OsuCommands {
     getplayerrecentplay: `(playersNameToGetTheRecentPlay : string, nameOfThePlayerAskedYou: string) // to get the a recent played beatmap of a player from Osu!`,
     updateplayersstatestostartmatchtimer:
       "(this function has no parameter) //To update all players state, if the lobby's mode Auto Map Pick you want to update all players states to use function startmatchtimer, you should use this updateplayersstates to update players states first, if half is ready the match will start, else it won't start, this will take around 3s, tell players to wait for few seconds for you to check",
-    getbeatmapdatatochangebeatmap: `(beatmapID : string) // you must use this getbeatmapdatatochangebeatmap function if you want to change the beatmap, this function requires players must give the beatmap id, it must be a number, tell players to wait for you check the map valid after few seconds or ask if then just want to just vote to skip a map`,
+    getbeatmapdatatochangebeatmap: `(beatmapID : string) // you must use this getbeatmapdatatochangebeatmap function if you want to change the beatmap, this function requires players must give the beatmap id, it must be a number, tell players to wait for you check the map's validity after few seconds or ask if then just want to just vote to skip a map`,
   };
 
   //   callbackFunctionsList = {
