@@ -258,9 +258,10 @@ class OsuLobbyBot {
           console.log(`- ${lobbyPlayer.user.username} left the lobby`);
 
           if (this.rotateHostList.length == 0) {
-            await this.changeLobbyName(true);
+            await this.osuChannel?.lobby.setName(this.getLobbyName());
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
+            await this.osuChannel?.lobby.setName(this.getLobbyName());
             return;
           }
 
@@ -317,11 +318,15 @@ class OsuLobbyBot {
 
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
+        let msg = message.message;
+        console.log(`Player ${message.user.username}: ${msg}`);
+
         this.chatHistoryHandler(message);
 
         if (
           message.user.username != undefined &&
-          !message.message.startsWith("!")
+          !message.message.startsWith("!") &&
+          message.user.username != "ThangProVip"
         ) {
           this.chatWithAI(
             await this.getUserPrompt(
@@ -330,8 +335,6 @@ class OsuLobbyBot {
           );
         }
 
-        let msg = message.message;
-        console.log(`Player ${message.user.username}: ${msg}`);
         if (msg.startsWith("!")) {
           let args = msg.substring(1, msg.length).toLowerCase().split(" ");
           if (this.adminIDs.includes(message.user.id)) {
@@ -430,7 +433,7 @@ class OsuLobbyBot {
                 b.totalLength > this.maxLengthForHostRotate
               ) {
                 if (this.osuChannel) {
-                  //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK 
+                  //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK
                   if (this.lastBeatmapToRepick) {
                     await Promise.all([
                       await this.osuChannel.sendAction(
@@ -483,7 +486,6 @@ class OsuLobbyBot {
       });
 
       this.osuChannel.lobby.on("playing", async (state) => {
-
         this.isMatchPlaying = state;
 
         if (this.rotateHostList.length === 0 && state) {
@@ -499,7 +501,6 @@ class OsuLobbyBot {
         if (playersStates.totalPlayer > 0) {
           if (playersStates.totalReady == playersStates.totalPlayer)
             await this.startMatchTimer();
-            
         }
       });
     } catch (error) {
@@ -534,7 +535,11 @@ class OsuLobbyBot {
             (command) =>
               message.message.startsWith(command.key) ||
               message.message.includes(command.value)
-          ) && message.playerName
+          ) &&
+          message.playerName &&
+          !message.message.toLowerCase().includes("picked map") &&
+          !message.message.toLowerCase().includes("!mp start") &&
+          !message.message.toLowerCase().includes("!mp name")
       );
     }
 
@@ -545,15 +550,15 @@ class OsuLobbyBot {
     if (this.playersChatHistory.length > this.maxChatHistoryLength) {
       for (let index = 0; index < this.playersChatHistory.length; index++) {
         if (this.playersChatHistory.length <= 45) {
+          this.playersChatHistory.push({
+            playerName: message.user.username,
+            message: message.message,
+          });
           break;
         } else {
           this.playersChatHistory.shift();
         }
       }
-      this.playersChatHistory.push({
-        playerName: message.user.username,
-        message: message.message,
-      });
     } else {
       this.playersChatHistory.push({
         playerName: message.user.username,
@@ -572,32 +577,32 @@ class OsuLobbyBot {
     }
   }
 
-  async changeLobbyName(noPlayer?: boolean) {
-    if (this.osuChannel) {
-      if (noPlayer) {
-        this.currentMapMinDif = 0;
-        this.currentMapMaxDif = 0;
-        let lobbyName = this.getLobbyName();
-        if (this.lastLobbyName == lobbyName) return;
-        await this.osuChannel.lobby.setName(lobbyName);
-        this.lastLobbyName = lobbyName;
-        return;
-      }
+  // async changeLobbyName(noPlayer?: boolean) {
+  //   if (this.osuChannel) {
+  //     if (noPlayer) {
+  //       this.currentMapMinDif = 0;
+  //       this.currentMapMaxDif = 0;
+  //       let lobbyName = this.getLobbyName();
+  //       if (this.lastLobbyName == lobbyName) return;
+  //       await this.osuChannel.lobby.setName(lobbyName);
+  //       this.lastLobbyName = lobbyName;
+  //       return;
+  //     }
 
-      let lobbyName = this.getLobbyName();
-      if (this.lastLobbyName == lobbyName) return;
-      await this.osuChannel.lobby.setName(lobbyName);
-      this.lastLobbyName = lobbyName;
-    }
-  }
+  //     let lobbyName = this.getLobbyName();
+  //     if (this.lastLobbyName == lobbyName) return;
+  //     await this.osuChannel.lobby.setName(lobbyName);
+  //     this.lastLobbyName = lobbyName;
+  //   }
+  // }
 
   getLobbyName() {
-    if(this.rotateHostList.length == 0){
+    if (this.rotateHostList.length == 0) {
       return `${this.currentMapMinDif.toFixed(
         1
       )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
     } else {
-      if(this.isMatchPlaying == false){
+      if (this.isMatchPlaying == false) {
         return `${this.currentMapMinDif.toFixed(
           1
         )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
@@ -608,7 +613,6 @@ class OsuLobbyBot {
           this.calculateTimeLeft()
         )} | Auto - !rhelp`;
       }
-      
     }
   }
 
@@ -627,6 +631,8 @@ class OsuLobbyBot {
     }
 
     if (ranks.length == 0) {
+      this.currentMapMinDif = 0;
+      this.currentMapMaxDif = 0;
       return false;
     }
 
@@ -670,7 +676,7 @@ class OsuLobbyBot {
       this.currentMapMinDif = min;
       this.currentMapMaxDif = max;
 
-      await this.changeLobbyName();
+      await this.osuChannel.lobby.setName(this.getLobbyName());
     }
   }
 
@@ -1748,7 +1754,7 @@ ${playerChatHistory}`;
         }
       }
 
-      userPrompt = `Here's the Data, lets see how players performed, try your best give them your best thoughts "ThangProVip":
+      userPrompt = `Here's the Data, lets see how players performed the last beatmap, try your best give them your best thoughts "ThangProVip":
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
@@ -1763,37 +1769,12 @@ Lobby's current modes: ${this.roomMode}
 
 ${lastBm}
 
-${currentBm}
+Players Score (What do you think about the players score?, respond the players):
+${playerScoreStr}
 
-Players Score:
-${playerScoreStr}`;
-    }
-
-    if (
-      type ==
-      "Changed Difficulty: The Difficulty Of The Lobby Just Changed Base On Users Ranks"
-    ) {
-      userPrompt = `You just changed the Room dificulty base on the median of the players Osu! rank in the lobby. ThangProVip, what will you reply to players base on the data i'm giving you?:
-
-Datatype: ${type}
-! Empty = this slot is empty
-! Host = this slot is the current host
-Total Players: ${this.rotateHostList.length}/${
-        this.osuChannel?.lobby.slots.length
-      }
-${listOfPlayerStr}
-
-${lastBm}
-
-${currentBm}
-
-Pervious min difficulty: ${this.lastMapMinDif.toFixed(2)}
-Pervious max difficulty: ${this.lastMapMaxDif.toFixed(2)}
-Current min difficulty: ${this.currentMapMinDif.toFixed(2)}
-Current max difficulty: ${this.currentMapMaxDif.toFixed(2)}
-
-Chat History:
-${playerChatHistory}`;
+Message History: (Message History will be listed from newest to latest, the first message will be the oldest message and the last message (at the bottom) will be the latest message)
+${playerChatHistory}
+`;
     }
 
     if (
