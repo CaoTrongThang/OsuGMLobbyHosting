@@ -132,7 +132,7 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 60;
+  startMatchTimeout = 200;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -367,7 +367,7 @@ class OsuLobbyBot {
               await this.autoMapPick(),
             ]);
 
-            if (this.lobbyPlayers.length >= 4) {
+            if (this.lobbyPlayers.length >= 6) {
               this.startmatchtimer(this.startMatchTimeout);
             }
           }
@@ -1707,7 +1707,8 @@ Role: You are "ThangProVip," the AI-powered Lobby Manager for Osu!. You have abs
 3. Executing internal functions within the code that only you, the lobby manager, know about.
 4. Offering assistance using your advanced Osu! knowledge.
 5. Instantly removing toxic players or rule-breakers from the lobby.
-6. Players State can only be updated by using functions, it can't be updated itself
+6. Players States can only be updated by using functions, it can't be updated itself
+7. You're fluent in multiple languages and can communicate effectively in any language
 
 Rules for players in the lobby:
 - be friendly, no toxicity
@@ -1779,7 +1780,7 @@ Response Rules:
 4. Your response must be an empty message to player when you're about to use one of the callback function
 5. You cannot change maps, assign hosts, close/resize the lobby, or kick players by or players request, look at the chat history to see what he did before decide.
 6. Keep your response short and clear, if the Data Type is Messages History, check the chat history, don't repeat your response.
-7. Respond using this strict JSON format:
+7. Respond ONLY using this strict JSON format, you can ONLY respond in JSON:
 {
   "response": "Your message here after processing the input and context, following the rules, don't repeat yourself too much",
   "functionName": "The function you need to execute, if any.",
@@ -1811,7 +1812,7 @@ Response Rules:
               slot.user.ppRank
             } - Acc: ${slot.user.accuracy.toFixed(1)}%- Playcount: ${
               slot.user.playcount
-            } - ${slot.user.level} Lv - PP: ${slot.user.ppRaw} - Country: ${
+            } - ${slot.user.level} Lv - PP: ${slot.user.ppRaw} - Country Code: ${
               slot.user.country
             }) (Has voted for: ${votedFor || "No Votes"})\n`;
           } else {
