@@ -12,6 +12,7 @@ type osuPlayerData = {
   totalPlayedScore?: number;
   totalTopOne?: number;
   isBanned?: boolean;
+  unbanDate?: Date
   banReason?: string
 };
 

@@ -113,9 +113,6 @@ class OsuAPIRequest {
     ar: number = 9
   ): Promise<Beatmap[]> {
     try {
-      if (this.beatmapGetCounter > 6) {
-        this.beatmapGetCounter = 0;
-      }
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
 
       const response = await axios.get(OSU_API_URL, {
@@ -151,6 +148,9 @@ class OsuAPIRequest {
             Number(b.difficultyrating) <= maxDifficulty &&
             Number(b.diff_approach) > ar
         );
+        if (this.beatmapGetCounter > 6) {
+          this.beatmapGetCounter = 0;
+        }
         this.beatmapGetCounter++;
         return filteredBeatmaps;
       }

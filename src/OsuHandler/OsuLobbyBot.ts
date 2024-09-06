@@ -1,5 +1,6 @@
 //TODO MAKE BAN FUNCTION
-
+//TODO FIX TÊN PHÒNG BỊ LỖI VẪN CẬP NHẬT THỜI GIAN KHI KHÔNG CHƠI, BẮT ĐẦU LỖI KHI CÓ TỪ 2 NGƯỜI CHƠI
+//TODO Hình như chủ ThangProVip không ở trong phòng thì ThangProVip không được lưu lịch sử chat
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -243,6 +244,7 @@ class OsuLobbyBot {
             await this.autoMapPick();
           }
         }
+
         if (this.roomMode == "Auto Map Pick") {
           if (this.rotateHostList.length > 5) {
             await this.startMatchTimer(this.startMatchTimeout);
@@ -306,7 +308,6 @@ class OsuLobbyBot {
         }
       });
 
-
       this.osuChannel.lobby.on("host", (host) => {
         if (host) {
           console.log("Host changed to: ", host.user.username);
@@ -320,8 +321,7 @@ class OsuLobbyBot {
 
         if (
           message.user.username != undefined &&
-          !message.message.startsWith("!") &&
-          message.user.username != "ThangProVip"
+          !message.message.startsWith("!")
         ) {
           this.chatWithAI(
             await this.getUserPrompt(
@@ -331,7 +331,7 @@ class OsuLobbyBot {
         }
 
         let msg = message.message;
-        console.log(`${message.user.username}: ${msg}`);
+        console.log(`Player ${message.user.username}: ${msg}`);
         if (msg.startsWith("!")) {
           let args = msg.substring(1, msg.length).toLowerCase().split(" ");
           if (this.adminIDs.includes(message.user.id)) {
@@ -430,7 +430,7 @@ class OsuLobbyBot {
                 b.totalLength > this.maxLengthForHostRotate
               ) {
                 if (this.osuChannel) {
-                  //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK
+                  //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK 
                   if (this.lastBeatmapToRepick) {
                     await Promise.all([
                       await this.osuChannel.sendAction(
@@ -497,9 +497,9 @@ class OsuLobbyBot {
         let playersStates = await this.getPlayersStates();
         if (!playersStates) return;
         if (playersStates.totalPlayer > 0) {
-          
           if (playersStates.totalReady == playersStates.totalPlayer)
             await this.startMatchTimer();
+            
         }
       });
     } catch (error) {
