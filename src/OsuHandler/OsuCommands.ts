@@ -19,6 +19,8 @@ class OsuCommands {
       "(mods : string, howManyPlayersInMessageHistoryWantToChangeTheMod?) // to change the Lobby's MOD, only use this function only half of the players want to change to that mod in the Messages History, respond them if not enough players want to change the mod, can only use 3 mods at a time, example: `hd hr dt`",
     startmatchtimer:
       "(timeoutSeconds : string) start a match after timeoutSeconds, the parameter must be a number, maybe around 30, use this when half players are ready, use this function after you used the updatePlayersStates to update all players states",
+    changebeatmap:
+      "(beatmapID : string) to change the beatmap by beatmapID, beatmapID must be a number, use this function after you used the function getbeatmapdatatochangebeatmap",
     donothing: "This function helps you do nothing",
   };
 
@@ -33,9 +35,10 @@ class OsuCommands {
       "(playersNameToGetStats : string, nameOfThePlayerAskedYou: string) // to get players aren't in the lobby by this function, get a player's stats from Osu! after few seconds you will get the data",
     getusertopplays:
       "(playersNameToGetToPlays : string, nameOfThePlayerAskedYou: string) // to get 3 top playes of a player from Osu!, after few seconds you will get the data tell players to wait for you to get the data",
-    getplayerrecentplay: `(playersNameToGetTheRecentPlay : string, nameOfThePlayerAskedYou: string") // to get the a recent played beatmap of a player from Osu!`,
+    getplayerrecentplay: `(playersNameToGetTheRecentPlay : string, nameOfThePlayerAskedYou: string) // to get the a recent played beatmap of a player from Osu!`,
     updateplayersstatestostartmatchtimer:
       "(this function has no parameter) //To update all players state, if the lobby's mode Auto Map Pick you want to update all players states to use function startmatchtimer, you should use this updateplayersstates to update players states first, if half is ready the match will start, else it won't start, this will take around 3s, tell players to wait for few seconds for you to check",
+    getbeatmapdatatochangebeatmap: `(beatmapID : string) // you must use this getbeatmapdatatochangebeatmap function if you want to change the beatmap, this function requires players must give the beatmap id, it must be a number, tell players to wait for you check the map valid after few seconds or ask if then just want to just vote to skip a map`,
   };
 
   //   callbackFunctionsList = {

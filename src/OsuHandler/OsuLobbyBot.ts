@@ -1,6 +1,5 @@
 //TODO MAKE BAN FUNCTION
-//TODO FIX TÊN PHÒNG BỊ LỖI VẪN CẬP NHẬT THỜI GIAN KHI KHÔNG CHƠI, BẮT ĐẦU LỖI KHI CÓ TỪ 2 NGƯỜI CHƠI
-//TODO Hình như chủ ThangProVip không ở trong phòng thì ThangProVip không được lưu lịch sử chat
+
 import dotenv from "dotenv";
 
 require("events").defaultMaxListeners = 60;
@@ -194,6 +193,10 @@ class OsuLobbyBot {
         this.start();
       }
       if (this.osuClient.isConnected() && !this.osuChannel) {
+        this.currentBeatmap = null;
+        this.lastBeatmap = undefined;
+        this.currentMapMaxDif = 0;
+        this.currentMapMinDif = 0;
         this.createAndHandleLobby();
       }
     }, 1000 * 1800);
@@ -231,12 +234,13 @@ class OsuLobbyBot {
             await this.hostRotate();
           }
         }
-
-        this.chatWithAI(
-          await this.getUserPrompt(
-            "Messages History: Carefully response to them or execute functions if need"
-          )
-        );
+        if (lobbyPlayer.player.user.username != "ThangProVip") {
+          this.chatWithAI(
+            await this.getUserPrompt(
+              "Messages History: Carefully response to them or execute functions if need"
+            )
+          );
+        }
 
         if (this.roomMode == "Auto Map Pick") {
           if (this.rotateHostList.length == 1) {
@@ -247,7 +251,7 @@ class OsuLobbyBot {
 
         if (this.roomMode == "Auto Map Pick") {
           if (this.rotateHostList.length > 5) {
-            await this.startMatchTimer(this.startMatchTimeout);
+            await this.startmatchtimer(this.startMatchTimeout);
           }
         }
       });
@@ -261,7 +265,6 @@ class OsuLobbyBot {
             await this.osuChannel?.lobby.setName(this.getLobbyName());
             await this.changeDifficultyBaseOnPlayersRank();
             await this.autoMapPick();
-            await this.osuChannel?.lobby.setName(this.getLobbyName());
             return;
           }
 
@@ -294,14 +297,15 @@ class OsuLobbyBot {
             this.rotateHostList.length < 5
           ) {
             if (!this.osuChannel) return;
-            if (await this.getPlayersStates()) {
-              await this.startMatchTimer();
+            let state = await this.getPlayersStates()
+            if (state?.totalReady == state?.totalPlayer) {
+              await this.startmatchtimer();
             }
           } else if (
             this.roomMode == "Auto Map Pick" &&
             this.rotateHostList.length >= 5
           ) {
-            await this.startMatchTimer();
+            await this.startmatchtimer();
           }
         } catch (e) {
           await this.closeLobby();
@@ -366,6 +370,7 @@ class OsuLobbyBot {
       this.osuChannel.lobby.on("matchFinished", async () => {
         console.log("============= MATCH FINISHED =============");
         if (!this.osuChannel) return;
+        this.isMatchPlaying = false;
 
         this.totalMatchPlayedFromStartLobby++;
         try {
@@ -378,7 +383,7 @@ class OsuLobbyBot {
             ]);
 
             if (this.rotateHostList.length >= 6) {
-              this.startMatchTimer(this.startMatchTimeout);
+              this.startmatchtimer(this.startMatchTimeout);
             }
           }
 
@@ -409,12 +414,13 @@ class OsuLobbyBot {
 
       this.osuChannel.lobby.on("matchAborted", async () => {
         await this.osuChannel?.lobby.setName(this.getLobbyName());
+        this.isMatchPlaying = false;
         if (
           this.roomMode == "Auto Map Pick" &&
           this.rotateHostList.length > 0
         ) {
           if (this.rotateHostList.length >= 4) {
-            this.startMatchTimer(this.timeoutAfterRoomModeChangeToAutoPick);
+            this.startmatchtimer(this.timeoutAfterRoomModeChangeToAutoPick);
           }
         }
       });
@@ -427,10 +433,7 @@ class OsuLobbyBot {
             // Check if the beatmap is valid
             if (b != null) {
               if (
-                b.difficultyRating > this.currentMapMaxDif ||
-                b.difficultyRating < this.currentMapMinDif ||
-                b.mode != 0 ||
-                b.totalLength > this.maxLengthForHostRotate
+                !this.checkBeatmapMeetRequirements(b.difficultyRating, Number(b.mode), b.totalLength)
               ) {
                 if (this.osuChannel) {
                   //TODO CALCULATE BEATMAP WITH DT BEFORE CHANGING IT BACK
@@ -483,15 +486,15 @@ class OsuLobbyBot {
         this.matchStartTime = Date.now();
         this.voteData = [];
         this.lastBeatmap = this.osuChannel?.lobby.beatmap;
-      });
+        this.isMatchPlaying = true;
 
-      this.osuChannel.lobby.on("playing", async (state) => {
-        this.isMatchPlaying = state;
-
-        if (this.rotateHostList.length === 0 && state) {
-          this.osuChannel?.sendMessage("Match aborted because no players");
-          this.osuChannel?.lobby.abortMatch();
-          this.abortMatchTimer();
+        if (this.rotateHostList.length === 0 && this.isMatchPlaying) {
+          await this.osuChannel?.lobby.abortMatch();
+          await this.abortMatchTimer();
+          await this.osuChannel?.sendMessage(
+            "Match aborted because no players"
+          );
+          this.isMatchPlaying = false;
         }
       });
 
@@ -500,7 +503,7 @@ class OsuLobbyBot {
         if (!playersStates) return;
         if (playersStates.totalPlayer > 0) {
           if (playersStates.totalReady == playersStates.totalPlayer)
-            await this.startMatchTimer();
+            await this.startmatchtimer();
         }
       });
     } catch (error) {
@@ -526,7 +529,22 @@ class OsuLobbyBot {
       (key) => typeof obj[key as keyof T] === "function"
     ) as (keyof T)[];
   }
-
+  checkBeatmapMeetRequirements(
+    difficultyRating: number,
+    mode: number,
+    totalLength: number
+  ) {
+    if (
+      difficultyRating > this.currentMapMaxDif ||
+      difficultyRating < this.currentMapMinDif ||
+      mode != 0 ||
+      totalLength > this.maxLengthForHostRotate
+    ) {
+      return false;
+    } 
+    
+    return true;
+  }
   getChatHistory(filter: boolean) {
     if (filter) {
       return this.playersChatHistory.filter(
@@ -537,7 +555,7 @@ class OsuLobbyBot {
               message.message.includes(command.value)
           ) &&
           message.playerName &&
-          !message.message.toLowerCase().includes("picked map") &&
+          !message.message.toLowerCase().includes("!mp map") &&
           !message.message.toLowerCase().includes("!mp start") &&
           !message.message.toLowerCase().includes("!mp name")
       );
@@ -576,25 +594,6 @@ class OsuLobbyBot {
       );
     }
   }
-
-  // async changeLobbyName(noPlayer?: boolean) {
-  //   if (this.osuChannel) {
-  //     if (noPlayer) {
-  //       this.currentMapMinDif = 0;
-  //       this.currentMapMaxDif = 0;
-  //       let lobbyName = this.getLobbyName();
-  //       if (this.lastLobbyName == lobbyName) return;
-  //       await this.osuChannel.lobby.setName(lobbyName);
-  //       this.lastLobbyName = lobbyName;
-  //       return;
-  //     }
-
-  //     let lobbyName = this.getLobbyName();
-  //     if (this.lastLobbyName == lobbyName) return;
-  //     await this.osuChannel.lobby.setName(lobbyName);
-  //     this.lastLobbyName = lobbyName;
-  //   }
-  // }
 
   getLobbyName() {
     if (this.rotateHostList.length == 0) {
@@ -787,7 +786,7 @@ class OsuLobbyBot {
       this.voteData.filter((v) => v.voteType == "Start Match").length >
       this.rotateHostList.length / 3
     ) {
-      await this.startMatchTimer();
+      await this.startmatchtimer();
       this.osuChannel.sendMessage(`The match is started`);
       this.resetVote("Start Match");
     }
@@ -847,7 +846,7 @@ class OsuLobbyBot {
         await this.autoMapPick();
         this.roomMode = "Auto Map Pick";
         if (this.rotateHostList.length >= 4) {
-          await this.startMatchTimer(this.startMatchTimeout);
+          await this.startmatchtimer(this.startMatchTimeout);
         }
       } else if (this.roomMode == "Auto Map Pick") {
         this.roomMode = "Host Rotate";
@@ -896,13 +895,63 @@ class OsuLobbyBot {
       console.log(e);
     }
   }
-  async startMatchTimer(timeSecond: number = 0) {
+  async startmatchtimer(timeSecond: number = 0) {
     this.isMatchStarting = true;
     if (timeSecond > 0) {
       await this.osuChannel?.lobby.startMatch(timeSecond);
     } else {
       await this.osuChannel?.lobby.startMatch();
     }
+  }
+
+  async changebeatmap(beatmapId: string) {
+    if(!this.osuChannel) return;
+    try{
+    await this.osuChannel.lobby.setMap(Number(beatmapId))
+    }catch(e){
+      console.log(e);
+      await this.osuChannel.sendMessage("Couldn't change beatmap, something is wrong")
+    }
+  }
+
+  async getbeatmapdatatochangebeatmap(beatmapId: string) {
+    try {
+      let beatmap: Beatmap[] | null = null;
+      try {
+        beatmap = await osuAPIRequest.getSpecificBeatmap(beatmapId);
+      } catch (e) {
+        beatmap = null;
+      }
+      let prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID`
+      if(!beatmap){
+        prompt 
+      } else {
+        prompt = `Players asked you to change the map, so you used the getbeatmapdatatochangebeatmap function, and you got all the data below, if you think the map fit all the requirements, you can use changebeatmap(beatmapID : string), also you can have some response for the map, like the map info or what's this song about, just for fun:
+
+        ${this.checkBeatmapMeetRequirements(Number(beatmap[0].difficultyrating), Number(beatmap[0].mode), Number(beatmap[0].total_length)) ? "I think the beatmap met all the requirements" : "I think the beatmap didn't meet all the requirements"}
+  
+        Lobby's Requirements:
+        - Min Difficulty: ${this.currentMapMinDif}
+        - Max Difficulty: ${this.currentMapMaxDif}
+        - Max Length: ${this.roomMode == "Auto Map Pick" ? this.maxLengthForAutoMapPickMode : this.maxLengthForHostRotate}
+  
+        Searched Beatmap's Info:
+        - Beatmap's Title: ${beatmap[0].title}
+        - Beatmap's Artist: ${beatmap[0].artist}
+        - Beatmap's Difficulty: ${beatmap[0].difficultyrating}
+        - Beatmap's Length: ${beatmap[0].hit_length}
+        `;
+  
+      }
+     
+      await this.chatWithAI(
+        await this.getUserPrompt(
+          "Required Run Function To Get Data: You required to run functions to get the data for responding to players",
+          prompt
+        ),
+        true
+      );
+    } catch (e) {}
   }
 
   async updateplayersstatestostartmatchtimer() {
@@ -1650,7 +1699,7 @@ class OsuLobbyBot {
     let playerScoreStr = ``;
 
     let playerChatHistory = this.chatHistoryFormat();
-    let listOfPlayerStr = await this.playersInLobbyFormat();
+    let listOfPlayerStr = await this.getPlayersInLobbyFormat();
 
     let lastBm = `Last beatmap's Information: ${this.lastBeatmap?.title} - ${
       this.lastBeatmap?.artist
@@ -1895,7 +1944,7 @@ Response Rules:
   `;
   }
 
-  async playersInLobbyFormat() {
+  async getPlayersInLobbyFormat() {
     let playersStr = "";
     let slotIndex = 0;
 

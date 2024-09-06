@@ -179,6 +179,25 @@ class OsuAPIRequest {
     }
   }
 
+  async getSpecificBeatmap(beatmapID: string) {
+    try {
+      const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
+
+      const response = await axios.get(OSU_API_URL, {
+        params: {
+          k: process.env.OSU_API_KEY,
+          b: beatmapID,
+          limit: 1
+        },
+      });
+      let beatmaps: Beatmap[] = response.data;
+      return beatmaps;
+    } catch (error) {
+      console.error("Error fetching beatmaps:", error);
+      return [];
+    }
+  }
+
   async getPlayerStats(userID: string) {
     let url = `https://osu.ppy.sh/api/get_user`;
     const response = await axios(url, {
