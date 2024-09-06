@@ -175,7 +175,8 @@ class OsuLobbyBot {
     setInterval(async () => {
       this.updateEmbed();
     }, 1000 * 10);
-
+    
+    //Update lobby name when the match is playing
     setInterval(async () => {
       if (this.isMatchPlaying) {
         this.osuChannel?.lobby.setName(this.getLobbyName());
