@@ -1075,7 +1075,9 @@ class OsuLobbyBot {
           Only 1 player in the lobby, just change the map as they pleased, cheer he/her up because he/her is alone
         `;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async updateplayersstatestostartmatchtimer() {
