@@ -115,7 +115,7 @@ class OsuLobbyBot {
   medianPPPoint = 0;
 
 
-  minPlayersNeedToChangeMode = 16
+  minPlayersNeedToChangeMode = 15
 
   defaultMapMinDif = 5.4
   defaultMapMaxDif = 6.5
@@ -837,7 +837,7 @@ class OsuLobbyBot {
   }
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-    if (this.rotateHostList.length < this.minPlayersNeedToChangeMode) {
+    if (this.rotateHostList.length <= this.minPlayersNeedToChangeMode) {
       this.osuChannel.sendMessage(
         `The lobby needs at least ${this.minPlayersNeedToChangeMode} players to start change the mode`
       );
