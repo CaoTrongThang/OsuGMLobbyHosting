@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import * as http from "http";
 import { MongoClient } from "mongodb";
 import osuAPIRequest from "./OsuHandler/OsuAPI";
+import { log } from "console";
 
 dotenv.config();
 
@@ -43,6 +44,8 @@ export const discordClient = new Client({
 //This HTTP server will keep the bot alive, not be shut down by Render
 const server = http.createServer((req, res) => {
   if (req.url === "/ping") {
+    console.log("*UPTIME CHECKED");
+    
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({

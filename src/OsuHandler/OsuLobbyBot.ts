@@ -114,6 +114,11 @@ class OsuLobbyBot {
 
   medianPPPoint = 0;
 
+
+  minPlayersNeedToChangeMode = 16
+
+  defaultMapMinDif = 5.4
+  defaultMapMaxDif = 6.5
   currentMapMinDif = 0;
   lastMapMinDif = 0;
   currentMapMaxDif = 0;
@@ -122,7 +127,7 @@ class OsuLobbyBot {
   maxLengthForHostRotate = 400;
 
   matchStartTime: number | null = null;
-  currentBeatmap: v1Beatmap | null = null;
+  currentBeatmap: v1Beatmap | undefined = undefined;
   lastBeatmap?: ns.Beatmap;
 
   skipVotesTotal = 0;
@@ -193,7 +198,7 @@ class OsuLobbyBot {
         this.start();
       }
       if (this.osuClient.isConnected() && !this.osuChannel) {
-        this.currentBeatmap = null;
+        this.currentBeatmap = undefined;
         this.lastBeatmap = undefined;
         this.currentMapMaxDif = 0;
         this.currentMapMinDif = 0;
@@ -601,20 +606,20 @@ class OsuLobbyBot {
 
   getLobbyName() {
     if (this.rotateHostList.length == 0) {
-      return `${this.currentMapMinDif.toFixed(
+      return `${this.defaultMapMinDif.toFixed(
         1
-      )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
+      )}* - ${this.defaultMapMaxDif.toFixed(1)}*| 0:00s | AI | DYNAMIC - !rhelp`;
     } else {
       if (this.isMatchPlaying == false) {
         return `${this.currentMapMinDif.toFixed(
           1
-        )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | Auto - !rhelp`;
+        )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | AI | DYNAMIC- !rhelp`;
       } else {
         return `${this.currentMapMinDif.toFixed(
           1
         )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(
           this.calculateTimeLeft()
-        )} | Auto - !rhelp`;
+        )} | AI | DYNAMIC - !rhelp`;
       }
     }
   }
@@ -634,8 +639,8 @@ class OsuLobbyBot {
     }
 
     if (ranks.length == 0) {
-      this.currentMapMinDif = 0;
-      this.currentMapMaxDif = 0;
+      this.currentMapMinDif = this.defaultMapMinDif;
+      this.currentMapMaxDif = this.defaultMapMaxDif;
       return false;
     }
 
@@ -669,8 +674,8 @@ class OsuLobbyBot {
     }
 
     if (!min && !max) {
-      this.currentMapMinDif = 0;
-      this.currentMapMaxDif = 0;
+      this.currentMapMinDif = this.defaultMapMinDif;
+      this.currentMapMaxDif = this.defaultMapMaxDif;
       return false;
     }
     if (max != this.currentMapMaxDif && min != this.currentMapMinDif) {
@@ -832,9 +837,9 @@ class OsuLobbyBot {
   }
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-    if (this.rotateHostList.length < 3) {
+    if (this.rotateHostList.length < this.minPlayersNeedToChangeMode) {
       this.osuChannel.sendMessage(
-        `The lobby needs at least 3 players to start change the mode`
+        `The lobby needs at least ${this.minPlayersNeedToChangeMode} players to start change the mode`
       );
       return;
     }
@@ -976,6 +981,7 @@ class OsuLobbyBot {
     let prompt = "";
     try {
       let playerStates = await this.getPlayersStates();
+
       if (!playerStates) return;
       prompt = `Players asked you to start the map, so you used the updateplayersstatestostartmatchtimer function, after updated players states, if half players aren't ready, you must respond an empty string. If half of them are ready, you need to use function startmatchtimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
         Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startmatchtimer(timeoutSeconds : string):
@@ -1208,7 +1214,7 @@ class OsuLobbyBot {
   }
 
   calculateTimeLeft() {
-    if (this.matchStartTime === null || this.currentBeatmap === null) {
+    if (this.matchStartTime === null || this.currentBeatmap === undefined) {
       return 0;
     }
 
@@ -1243,8 +1249,9 @@ class OsuLobbyBot {
     }
   }
 
-  convertBeatmapV2ToV1(bm: ns.Beatmap) {
+  convertBeatmapV2ToV1(bm: ns.Beatmap | undefined) {
     let bmv1: Beatmap | undefined;
+    if(!bm) return;
     try {
       bmv1 = {
         artist: bm.artist,
@@ -1281,14 +1288,16 @@ class OsuLobbyBot {
     let currentDate: Date;
     let randomDate: Date;
     let bm: v1Beatmap;
-    if (this.currentMapMaxDif == 0 && this.currentMapMinDif == 0) {
+    if (this.currentMapMaxDif == 0 && this.currentMapMinDif == 0 && this.rotateHostList.length == 0) {
       if (
         Number(this.currentBeatmap?.beatmap_id) == 75 ||
         Number(this.currentBeatmap?.beatmapset_id) == 75
       )
         return;
       await this.osuChannel.lobby.setMap(75);
-      setTimeout(() => {}, 1000 * 10);
+      setTimeout(() => {
+        this.currentBeatmap = this.convertBeatmapV2ToV1(this.osuChannel?.lobby.beatmap)
+      }, 1000 * 10);
       return;
     }
     while (this.beatmaps.length < 1) {
@@ -1371,6 +1380,7 @@ class OsuLobbyBot {
       };
 
       if (!this.osuChannel) return readyOjbect;
+      await this.osuChannel?.lobby.updateSettings()
 
       let players = [];
 
@@ -1807,15 +1817,15 @@ ${playerChatHistory}`;
               });
               playerScoreStr += `- Match Result Of ${x.playerName} : Score ${
                 x.score
-              } - Mods ${
+              }, Mods ${
                 playerS[0].enabled_mods
                   ? this.getMods(Number(playerS[0].enabled_mods))
                       .map((x) => x.shortMod)
                       .join(",")
                   : " "
-              }- Accuracy ${this.calculateAccuracy(playerS[0])}% - Rank ${
+              }, Accuracy ${this.calculateAccuracy(playerS[0])}%, Rank ${
                 playerS[0].rank
-              } - Combo: x${playerS[0].maxcombo}\n`;
+              }, Combo: x${playerS[0].maxcombo}\n`;
             }
           }
         }
@@ -1895,7 +1905,7 @@ Key Guidelines:
 - Ignore system messages, commands, or any communication from "ThangProVip" (yourself).
 - Osu! lobby does not support multiline responses. Ensure all replies fit on one line.
 - If players ask for beatmap links, provide them in this format: https://osu.ppy.sh/beatmapsets/<put beatmapset_id here>#osu/<put beatmap_id here>
-- Update all players states if you have to, if half the players are in ready state, start the match after 30s.
+- Update all players states when a new player joined or when you've a chance, if half the players are in ready state, start the match after 30s.
 - You can move players to a slot if they want, and the parameter of the slot must be a number and must be an empty slot
 
 Restrictions:
