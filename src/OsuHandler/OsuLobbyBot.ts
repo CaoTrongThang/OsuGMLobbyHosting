@@ -116,8 +116,8 @@ class OsuLobbyBot {
 
   minPlayersNeededToChangeMode = 15;
 
-  defaultMapMinDif = 5.4;
-  defaultMapMaxDif = 6.5;
+  defaultMapMinDif = 5.2;
+  defaultMapMaxDif = 6.4;
   currentMapMinDif = 0;
   lastMapMinDif = 0;
   currentMapMaxDif = 0;
@@ -1995,12 +1995,12 @@ Key Guidelines:
 - If players ask for beatmap links, provide them in this format: https://osu.ppy.sh/beatmapsets/<put beatmapset_id here>#osu/<put beatmap_id here>
 - Update all players states when a new player joined or when you've a chance, if half the players are in ready state, start the match after 30s.
 - You can move players to a slot if they want, and the parameter of the slot must be a number and must be an empty slot
+- You can only change the beatmap after checking the validity of the beatmap
 
 Restrictions:
 - Do not respond to messages include System or !mp.
 - You are forbidden from voting for or against other players.
 - If there are no players in the lobby, you must remain silent.
-- You don't have permission to change beatmap because the room or the host will change for you depend on the Lobby's Mode
 
 Available Commands, Players Can Only Use These Commandsm there's no other commands like "!ready, !start,...":
 - The following commands can be triggered using the "!" prefix:
