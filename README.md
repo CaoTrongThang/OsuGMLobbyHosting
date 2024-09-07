@@ -10,6 +10,9 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 
 - **AI-Powered Lobby Management**: Automates lobby tasks, reducing the need for manual intervention.
 - **Change Difficulty Base On The Median**: Change the lobby's difficulty base on the players in the room.
+- **Change Beatmap**: A variety of commands that players can use to interact with the lobby.
+- **Get Stats, Recent Play**: A variety of commands that players can use to interact with the lobby.
+- **Get Last Matches Data Of The Lobby**: A variety of commands that players can use to interact with the lobby.
 - **Real-Time Discord Integration**: Sends live updates to a specified Discord channel, keeping everyone informed.
 - **Flexible Game Modes**: Easily switch between "Host Rotate" and "Random Map" modes.
 - **Player Commands**: A variety of commands that players can use to interact with the lobby.
@@ -131,15 +134,15 @@ Me and my mate are playing visual studio code right here :>
 ![image](https://github.com/user-attachments/assets/40e49783-031b-4bee-8985-acb789e98c4a)
 
 Testers:
-Me
-Rot4tion
-TinsLevis
-Ripuli
-Revoken
-You are mine
-CkoCon
-Final_Zelix
-picco
-
-... And some players joined the lobby to play but never gotten to play
+- Me
+- Rot4tion
+- TinsLevis
+- Ripuli
+- Revoken
+- You are mine
+- CkoCon
+- Final_Zelix
+- picco
+- Andirus
+- ... And some players joined the lobby to play but never gotten to play
 
