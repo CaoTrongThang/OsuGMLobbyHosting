@@ -491,7 +491,7 @@ class OsuLobbyBot {
               }
             }
           } else {
-            this.currentBeatmap = this.convertBeatmapV2ToV1(b)
+            this.currentBeatmap = this.convertBeatmapV2ToV1(b);
           }
         } catch (e) {
           await this.closeLobby();
@@ -645,12 +645,14 @@ class OsuLobbyBot {
           )
         ) {
           if (message.playerName) {
-            return !message.message.toLowerCase().includes("!mp map") &&
+            return (
+              !message.message.toLowerCase().includes("!mp map") &&
               !message.message.toLowerCase().includes("!mp start") &&
               !message.message.toLowerCase().includes("!mp name") &&
-              !message.message.toLowerCase().includes("!mp settings");
+              !message.message.toLowerCase().includes("!mp settings")
+            );
           } else {
-            return message.message.toLowerCase().includes("joined in slot")
+            return message.message.toLowerCase().includes("joined in slot");
           }
         }
       });
@@ -1025,47 +1027,54 @@ class OsuLobbyBot {
       }
       let prompt = ``;
       if (!beatmap || !beatmap[0]) {
-        prompt = `Players asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID`;
-      } else {
+        prompt = `Players asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID or link`;
+      }
+      if (this.rotateHostList.length >= 2 && beatmap && beatmap[0]) {
         prompt = `Players asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you got all the data below, if you think the map fits all the requirements, you can use changebeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
-        
-        Lobby's Requirements:
-        - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
-        - Max Difficulty: ${this.currentMapMaxDif.toFixed(2)}
-        - Max Length: ${
-          this.roomMode == "Auto Map Pick"
-            ? this.maxLengthForAutoMapPickMode
-            : this.maxLengthForHostRotate
-        }
+          
+          Lobby's Requirements:
+          - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
+          - Max Difficulty: ${this.currentMapMaxDif.toFixed(2)}
+          - Max Length: ${
+            this.roomMode == "Auto Map Pick"
+              ? this.maxLengthForAutoMapPickMode
+              : this.maxLengthForHostRotate
+          }
+    
+          Searched Beatmap's Info:
+          - Beatmap's ID: ${beatmap[0].beatmap_id}
+          - Beatmap's Title: ${beatmap[0].title}
+          - Beatmap's Artist: ${beatmap[0].artist}
+          - Beatmap's Difficulty: ${Number(beatmap[0].difficultyrating).toFixed(
+            2
+          )}
+          - Beatmap's Length: ${beatmap[0].hit_length}
   
-        Searched Beatmap's Info:
-        - Beatmap's ID: ${beatmap[0].beatmap_id}
-        - Beatmap's Title: ${beatmap[0].title}
-        - Beatmap's Artist: ${beatmap[0].artist}
-        - Beatmap's Difficulty: ${Number(beatmap[0].difficultyrating).toFixed(
-          2
-        )}
-        - Beatmap's Length: ${beatmap[0].hit_length}
+          ${
+            this.checkBeatmapMeetRequirements(
+              Number(beatmap[0].difficultyrating),
+              Number(beatmap[0].mode),
+              Number(beatmap[0].total_length)
+            )
+              ? "It seems like the beatmap mett all the requirements"
+              : "I think the beatmap doesn't meet all the requirements, tell the players why"
+          }
+          `;
+      } else if (this.rotateHostList.length == 1 && beatmap && beatmap[0]) {
+        prompt = `A player asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changebeatmap(beatmapID : string) function:
+        
+          Searched Beatmap's Info:
+          - Beatmap's ID: ${beatmap[0].beatmap_id}
+          - Beatmap's Title: ${beatmap[0].title}
+          - Beatmap's Artist: ${beatmap[0].artist}
+          - Beatmap's Difficulty: ${Number(beatmap[0].difficultyrating).toFixed(
+            2
+          )}
+          - Beatmap's Length: ${beatmap[0].hit_length}
 
-        ${
-          this.checkBeatmapMeetRequirements(
-            Number(beatmap[0].difficultyrating),
-            Number(beatmap[0].mode),
-            Number(beatmap[0].total_length)
-          )
-            ? "It seems like the beatmap mett all the requirements"
-            : "I think the beatmap doesn't meet all the requirements, tell the players why"
-        }
+          Only 1 player in the lobby, just change the map as they pleased, cheer he/her up because he/her is alone
         `;
       }
-
-      await this.chatWithAI(
-        await this.getUserPrompt(
-          "Required Run Function To Get Data: You required to run functions to get the data for responding to players",
-          prompt
-        ),
-        true
-      );
     } catch (e) {}
   }
 
