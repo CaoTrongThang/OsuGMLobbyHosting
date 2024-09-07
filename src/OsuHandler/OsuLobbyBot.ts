@@ -1062,7 +1062,16 @@ class OsuLobbyBot {
           `;
       } else if (this.rotateHostList.length == 1 && beatmap && beatmap[0]) {
         prompt = `A player asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changebeatmap(beatmapID : string) function:
-        
+
+          Lobby's Requirements:
+          - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
+          - Max Difficulty: ${this.currentMapMaxDif.toFixed(2)}
+          - Max Length: ${
+            this.roomMode == "Auto Map Pick"
+              ? this.maxLengthForAutoMapPickMode
+              : this.maxLengthForHostRotate
+          }
+
           Searched Beatmap's Info:
           - Beatmap's ID: ${beatmap[0].beatmap_id}
           - Beatmap's Title: ${beatmap[0].title}
@@ -1072,9 +1081,11 @@ class OsuLobbyBot {
           )}
           - Beatmap's Length: ${beatmap[0].hit_length}
 
-          Only 1 player in the lobby, just change the map as they pleased, cheer he/her up because he/her is alone
+          Only 1 player in the lobby, just change the map as they pleased even if isn't meet the requirements or it is, cheer he/her up because he/her is alone
         `;
       }
+
+      await this.chatWithAI(await this.getUserPrompt("Required Run Function To Get Data: You required to run functions to get the data for responding to players", prompt), true)
     } catch (e) {
       console.log(e);
     }
