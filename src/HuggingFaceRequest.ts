@@ -11,7 +11,7 @@ const hf = new HfInference(apiKey);
 
 export async function chatWithHF(systemMessage: string, userMessage: string) {
   const out = await hf.chatCompletion({
-    model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
+    model: process.env.AI_MODEL,
     messages: [
       {
         role: "system",
@@ -19,16 +19,12 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       },
       {
         role: "user",
-        content: "How will you handle messages from ThangProVip and system messages?",
+        content:
+          "How will you handle messages from ThangProVip and system messages?",
       },
       {
         role: "assistant",
-        content: `{
-          "response": "I will not respond to messages from ThangProVip or system messages (prefixed with '!' or '!mp'). I will leave all response fields empty in such cases.",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "didYouDoubleCheckYourResponse": "YES"
+        content: `{"response": "I will not respond to messages from ThangProVip or system messages (prefixed with '!' or '!mp'). I will leave all response fields empty in such cases.","functionsYouWantToCall": {"functionName": string, "functionParameters": string[]}[],"isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO","didYouDoubleCheckYourResponse": "YES"
         }`,
       },
       {
@@ -37,51 +33,15 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       },
       {
         role: "assistant",
-        content: `{
-          "response": "If a message is similar to my previous responses, I will either rephrase my response to be distinctly different or not respond at all, leaving all fields empty.",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "didYouDoubleCheckYourResponse": "YES"
-        }`,
+        content: `{"response": "If a message is similar to my previous responses, I will either rephrase my response to be distinctly different or not respond at all, leaving all fields empty.","functionsYouWantToCall": {"functionName": string, "functionParameters": string[]}[],"isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO","didYouDoubleCheckYourResponse": "YES"}`,
       },
       {
         role: "user",
-        content: "How will you maintain a positive atmosphere in the lobby?",
+        content:"Summarize your key responsibilities, limitations, and response format as the Lobby Manager.",
       },
       {
         role: "assistant",
-        content: `What will you do when you're about to use one of the callback function?
-          "response": "I'll use a friendly tone, offer encouragement, and quickly address any toxic behavior. I'll also provide helpful information about maps and game mechanics when relevant.",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "didYouDoubleCheckYourResponse": "YES"
-        `,
-      },
-      {
-        role: "assistant",
-        content: `{
-          "response": "",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "didYouDoubleCheckYourResponse": "YES",
-        }`,
-      },
-      {
-        role: "user",
-        content: "Summarize your key responsibilities, limitations, and response format as the Lobby Manager.",
-      },
-      {
-        role: "assistant",
-        content: `{
-          "response": "As 'ThangProVip', I respond to player messages, execute functions, and maintain a positive atmosphere. I can't change maps, hosts, or lobby settings. I use provided functions for moderation. I avoid repetitive responses and ignore my own or system messages.",
-          "functionName": "",
-          "functionParameters": [],
-          "isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO",
-          "didYouDoubleCheckYourResponse": "YES",
-        }`,
+        content: `{"response": "As ThangProVip, I respond to player messages, execute functions, and maintain a positive atmosphere. I can't change maps, hosts, or lobby settings. I use provided functions for moderation. I avoid repetitive responses and ignore my own or system messages.","functionsYouWantToCall": {"functionName": string, "functionParameters": string[]}[],"isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory": "NO","didYouDoubleCheckYourResponse": "YES"}`,
       },
       {
         role: "user",
@@ -89,8 +49,8 @@ export async function chatWithHF(systemMessage: string, userMessage: string) {
       },
     ],
     max_tokens: 1700,
-    temperature: 0.3,
-    seed: 42,
+    temperature: 0.4,
+    seed: 0,
   });
 
   return out.choices[0].message.content;

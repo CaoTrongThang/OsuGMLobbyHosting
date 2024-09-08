@@ -10,7 +10,8 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 
 - **AI-Powered Lobby Management**: Automates lobby tasks, reducing the need for manual intervention.
 - **Change Difficulty Base On The Median**: Change the lobby's difficulty base on the players in the room.
-- **Change Beatmap**: A variety of commands that players can use to interact with the lobby.
+- **Change Beatmap By ID Or Link Or Itself**: A variety of commands that players can use to interact with the lobby.
+- **Get Last Matches Data Of The Lobby**: A variety of commands that players can use to interact with the lobby.
 - **Get Stats, Recent Play**: A variety of commands that players can use to interact with the lobby.
 - **Get Last Matches Data Of The Lobby**: A variety of commands that players can use to interact with the lobby.
 - **Real-Time Discord Integration**: Sends live updates to a specified Discord channel, keeping everyone informed.
@@ -50,6 +51,7 @@ Create a `.env` file in the root of your project and configure the following env
 
 ```env
 HUGGING_FACE_API_KEY = "KEY HERE, MUST BE A PRO VERSION OF HUGGING FACE, or you can try to change the AI and change way the function chatWithAI worth"
+AI_MODEL = "meta-llama/Meta-Llama-3.1-70B-Instruct" //The model of the AI on Hugging Face, lot of them can't be used, choose wisely
 AI_REPLY_COOLDOWN_SECONDS = "7" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"

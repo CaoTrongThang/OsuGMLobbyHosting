@@ -40,7 +40,7 @@ export type Beatmap = {
   artist: string;
   title: string;
   bpm: string;
-  tags: string[];
+  tags: string;
   favourite_count: string;
   rating: string;
   playcount: string;
@@ -105,12 +105,12 @@ class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
   beatmapGetCounter = 5;
-  async getRandomBeatmap(
+  async getRandomBeatmaps(
     minDifficulty: number,
     maxDifficulty: number,
     maxLength: number,
     sinceDay: Date,
-    ar: number = 9
+    ar: number = 6
   ): Promise<Beatmap[]> {
     try {
       const OSU_API_URL = "https://osu.ppy.sh/api/get_beatmaps";
@@ -120,7 +120,7 @@ class OsuAPIRequest {
           k: process.env.OSU_API_KEY,
           m: 0,
           since: sinceDay,
-          limit: 100,
+          limit: 150,
         },
       });
       let beatmaps: Beatmap[] = response.data;
@@ -133,7 +133,7 @@ class OsuAPIRequest {
             Number(b.total_length) <= maxLength &&
             Number(b.difficultyrating) >= minDifficulty &&
             Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) > ar &&
+            Number(b.diff_approach) >= ar &&
             !b.title.toLowerCase().includes("cut ver") &&
             !b.title.toLowerCase().includes("tv size")
         );
@@ -146,12 +146,13 @@ class OsuAPIRequest {
             Number(b.total_length) <= maxLength &&
             Number(b.difficultyrating) >= minDifficulty &&
             Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) > ar
+            Number(b.diff_approach) >= ar
         );
         if (this.beatmapGetCounter > 6) {
           this.beatmapGetCounter = 0;
         }
         this.beatmapGetCounter++;
+        
         return filteredBeatmaps;
       }
     } catch (error) {
