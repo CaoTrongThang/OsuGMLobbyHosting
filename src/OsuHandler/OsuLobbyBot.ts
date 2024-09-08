@@ -622,6 +622,8 @@ class OsuLobbyBot {
       totalScore: Number(u.score),
       percentCombo: Number(u.perfect),
       maxCombo: Number(u.maxcombo),
+      //@ts-ignore
+      cacheFiles: false
     });
     return {
       pp: pp.performance.totalPerformance,
