@@ -622,8 +622,6 @@ class OsuLobbyBot {
       totalScore: Number(u.score),
       percentCombo: Number(u.perfect),
       maxCombo: Number(u.maxcombo),
-      //@ts-ignore
-      cacheFiles: false
     });
     return {
       pp: pp.performance.totalPerformance,
@@ -2046,7 +2044,7 @@ You just required to call a function to get the data, here is the data you get:
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
-! Empty = this slot is empty
+! [No Player] = this slot is empty, you can remove players here
 ! Host = this slot is the current host
 Total Players In Slots And Their Information And State: ${
         this.rotateHostList.length
@@ -2060,10 +2058,11 @@ Lobby current mods: ${
           : "No Mods"
       }
 
-${callbackDataAndPrompt}
-
 Message History: (Message History will be listed from newest to latest, the first message will be the oldest message and the last message (at the bottom) will be the latest message, )
-${playerChatHistory}`;
+${playerChatHistory}
+
+${callbackDataAndPrompt}`;
+
     }
 
     if (type == "Checking If Chat Is Active") {
