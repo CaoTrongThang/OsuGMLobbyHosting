@@ -144,5 +144,6 @@ Testers:
 - Final_Zelix
 - picco
 - Andirus
+- dasher1505
 - ... And some players joined the lobby to play but never gotten to play
 

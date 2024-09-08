@@ -104,7 +104,7 @@ class OsuLobbyBot {
 
   playersChatHistory: PlayerChatHistory[] = [];
 
-  maxChatHistoryLength = 35;
+  maxChatHistoryLength = 40;
 
   totalMatchPlayedFromStartLobby = 0;
 
@@ -136,7 +136,7 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 200;
+  startMatchTimeout = 165;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -261,7 +261,7 @@ class OsuLobbyBot {
 
         if (this.roomMode == "Auto Map Pick") {
           if (this.rotateHostList.length > 5) {
-            await this.startmatchtimer(this.startMatchTimeout);
+            await this.startMatchTimer(this.startMatchTimeout);
           }
         }
       });
@@ -309,13 +309,13 @@ class OsuLobbyBot {
             if (!this.osuChannel) return;
             let state = await this.getPlayersStates();
             if (state?.totalReady == state?.totalPlayer) {
-              await this.startmatchtimer();
+              await this.startMatchTimer();
             }
           } else if (
             this.roomMode == "Auto Map Pick" &&
             this.rotateHostList.length >= 5
           ) {
-            await this.startmatchtimer();
+            await this.startMatchTimer();
           }
         } catch (e) {
           await this.closeLobby();
@@ -396,7 +396,7 @@ class OsuLobbyBot {
             ]);
 
             if (this.rotateHostList.length >= 6) {
-              this.startmatchtimer(this.startMatchTimeout);
+              this.startMatchTimer(this.startMatchTimeout);
             }
           }
 
@@ -432,7 +432,7 @@ class OsuLobbyBot {
           this.rotateHostList.length > 0
         ) {
           if (this.rotateHostList.length >= 4) {
-            this.startmatchtimer(this.timeoutAfterRoomModeChangeToAutoPick);
+            this.startMatchTimer(this.timeoutAfterRoomModeChangeToAutoPick);
           }
         }
       });
@@ -521,7 +521,7 @@ class OsuLobbyBot {
         if (!playersStates) return;
         if (playersStates.totalPlayer > 0) {
           if (playersStates.totalReady == playersStates.totalPlayer)
-            await this.startmatchtimer();
+            await this.startMatchTimer();
         }
       });
     } catch (error) {
@@ -607,6 +607,10 @@ class OsuLobbyBot {
       count100: Number(u.count100),
       count300: Number(u.count300),
       countMiss: Number(u.countmiss),
+      totalScore: Number(u.score),
+      percentCombo: Number(u.perfect),
+      maxCombo: Number(u.maxcombo),
+
     });
     return {
       pp: pp.performance.totalPerformance,
@@ -888,7 +892,7 @@ class OsuLobbyBot {
       this.voteData.filter((v) => v.voteType == "Start Match").length >
       this.rotateHostList.length / 3
     ) {
-      await this.startmatchtimer();
+      await this.startMatchTimer();
       this.osuChannel.sendMessage(`The match is started`);
       this.resetVote("Start Match");
     }
@@ -948,7 +952,7 @@ class OsuLobbyBot {
         await this.autoMapPick();
         this.roomMode = "Auto Map Pick";
         if (this.rotateHostList.length >= 4) {
-          await this.startmatchtimer(this.startMatchTimeout);
+          await this.startMatchTimer(this.startMatchTimeout);
         }
       } else if (this.roomMode == "Auto Map Pick") {
         this.roomMode = "Host Rotate";
@@ -959,7 +963,7 @@ class OsuLobbyBot {
     }
   }
 
-  async kickplayer(playerName?: string) {
+  async kickPlayer(playerName?: string) {
     if (!this.osuChannel) return;
     if (!playerName) return;
     try {
@@ -979,7 +983,7 @@ class OsuLobbyBot {
       await this.closeLobby();
     }
   }
-  async moveplayertoslot(playerName?: string, slot?: any) {
+  async movePlayerToSlot(playerName?: string, slot?: any) {
     try {
       if (!this.osuChannel) return;
 
@@ -997,7 +1001,7 @@ class OsuLobbyBot {
       console.log(e);
     }
   }
-  async startmatchtimer(timeSecond: number = 0) {
+  async startMatchTimer(timeSecond: number = 0) {
     this.isMatchStarting = true;
     if (timeSecond > 0) {
       await this.osuChannel?.lobby.startMatch(timeSecond);
@@ -1006,7 +1010,7 @@ class OsuLobbyBot {
     }
   }
 
-  async changebeatmap(beatmapId: string) {
+  async changeBeatmap(beatmapId: string) {
     if (!this.osuChannel) return;
     try {
       await this.osuChannel.lobby.setMap(Number(beatmapId));
@@ -1018,7 +1022,7 @@ class OsuLobbyBot {
     }
   }
 
-  async checkbeatmapvaliditytochangebeatmap(beatmapId: string) {
+  async checkBeatmapValidityToChangeBeatmap(beatmapId: string) {
     try {
       let beatmap: Beatmap[] | null = null;
       try {
@@ -1028,10 +1032,10 @@ class OsuLobbyBot {
       }
       let prompt = ``;
       if (!beatmap || !beatmap[0]) {
-        prompt = `Players asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID or link`;
+        prompt = `Players asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmap, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID or link`;
       }
       if (this.rotateHostList.length >= 2 && beatmap && beatmap[0]) {
-        prompt = `Players asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you got all the data below, if you think the map fits all the requirements, you can use changebeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
+        prompt = `Players asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmap, and you got all the data below, if you think the map fits all the requirements, you can use changeBeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
           
           Lobby's Requirements:
           - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
@@ -1058,11 +1062,11 @@ class OsuLobbyBot {
               Number(beatmap[0].total_length)
             )
               ? "It seems like the beatmap mett all the requirements"
-              : "I think the beatmap doesn't meet all the requirements, tell the players why"
+              : "I think the beatmap doesn't meet all the requirements, but if most players in the chat want to play that kind of beatmaps, let them play, else tell the one chose the map why the map isn't acceptable"
           }
           `;
       } else if (this.rotateHostList.length == 1 && beatmap && beatmap[0]) {
-        prompt = `A player asked you to change the map, so you used the checkbeatmapvaliditytochangebeatmap function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changebeatmap(beatmapID : string) function:
+        prompt = `A player asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmap function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changeBeatmap(beatmapID : string) function:
 
           Lobby's Requirements:
           - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
@@ -1082,7 +1086,7 @@ class OsuLobbyBot {
           )}
           - Beatmap's Length: ${beatmap[0].hit_length}
 
-          Only 1 player in the lobby, just change the map as they pleased even if isn't meet the requirements or it is, cheer he/her up because he/her is alone
+          Only 1 player in the lobby, just change the map as they pleased even if it isn't meet the requirements or it is, cheer he/her up because he/her is alone
         `;
       }
 
@@ -1092,14 +1096,14 @@ class OsuLobbyBot {
     }
   }
 
-  async updateplayersstatestostartmatchtimer() {
+  async updatePlayersStates() {
     let prompt = "";
     try {
       let playerStates = await this.getPlayersStates();
 
       if (!playerStates) return;
-      prompt = `Players asked you to start the map, so you used the updateplayersstatestostartmatchtimer function, after updated players states, if half players aren't ready, you must respond an empty string. If half of them are ready, you need to use function startmatchtimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
-        Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startmatchtimer(timeoutSeconds : string):
+      prompt = `Players asked you to start the map, so you used the updatePlayersStates function, after updated players states, if half players aren't ready, you must respond an empty string. If half of them are ready, you need to use function startMatchTimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
+        Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startMatchTimer(timeoutSeconds : string):
         
         ${
           playerStates?.totalReady == playerStates?.totalPlayer / 2
@@ -1124,7 +1128,7 @@ class OsuLobbyBot {
     }
   }
 
-  async changelobbymods(mods: string = "", howManyPlayerWantIt: string) {
+  async changeLobbyMods(mods: string = "", howManyPlayerWantIt: string) {
     try {
       await this.osuChannel?.lobby.setMods(mods, true);
     } catch (e) {
@@ -1132,7 +1136,7 @@ class OsuLobbyBot {
     }
   }
 
-  async getlastmatcheshistory(nameOfRequestedPlayer: string = "") {
+  async getLastMatchesHistory(nameOfRequestedPlayer: string = "") {
     let prompt = "";
     try {
       if (this.lastMatchData.length == 0) {
@@ -1169,7 +1173,7 @@ class OsuLobbyBot {
     }
   }
   //Callback functions down here
-  async getplayerstats(userName: string, askedPlayer: string) {
+  async getPlayerStats(userName: string, askedPlayer: string) {
     let user: osuUser[] | null = await osuAPIRequest.getPlayerStats(userName);
     let prompt = "";
     try {
@@ -1200,7 +1204,7 @@ class OsuLobbyBot {
     }
   }
 
-  async getplayertopplays(userName: string, askedPlayer: string) {
+  async getPlayerTopPlays(userName: string, askedPlayer: string) {
     let topPlays: PlayerTopPlays[] | null =
       await osuAPIRequest.getPlayerTopPlays(userName);
     let prompt = "";
@@ -1263,7 +1267,7 @@ class OsuLobbyBot {
     }
   }
 
-  async getplayerrecentplay(userName: string, askedPlayer: string) {
+  async getPlayerRecentPlay(userName: string, askedPlayer: string) {
     let user: PlayerRecentPlays[] | null =
       await osuAPIRequest.getPlayerRecentPlays(userName);
     let prompt = "";
@@ -1767,6 +1771,8 @@ class OsuLobbyBot {
 
       let response = await chatWithHF(systemPrompt, userPrompt);
 
+      console.log(response);
+
       if (!response) return;
       let responseJSON: AIresponse;
       try {
@@ -1777,8 +1783,6 @@ class OsuLobbyBot {
       }
 
       if (!responseJSON) return;
-
-      console.log(responseJSON);
 
       if (
         responseJSON.response == "" &&
@@ -1794,9 +1798,9 @@ class OsuLobbyBot {
 
       for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
         if (
-          x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
+          x.toLowerCase() == responseJSON.functionName.toLowerCase() &&
           this.getObjectKeyValue(osuCommands.callbackFunctionsList).some(
-            (command) => command.key == x.toLowerCase()
+            (command) => command.key.toLowerCase() == x.toLowerCase()
           )
         ) {
           await (this as any)[x](...responseJSON.functionParameters);
@@ -1805,9 +1809,9 @@ class OsuLobbyBot {
 
       for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
         if (
-          x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
+          x.toLowerCase() == responseJSON.functionName.toLowerCase() &&
           this.getObjectKeyValue(osuCommands.commandsList).some(
-            (command) => command.key == x.toLowerCase()
+            (command) => command.key.toLowerCase() == x.toLowerCase()
           )
         ) {
           await (this as any)[x](undefined, ...responseJSON.functionParameters);
@@ -1815,9 +1819,9 @@ class OsuLobbyBot {
       }
       for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
         if (
-          x.toLowerCase() == responseJSON.functionName.toLocaleLowerCase() &&
+          x.toLowerCase() == responseJSON.functionName.toLowerCase() &&
           this.getObjectKeyValue(osuCommands.systemFunctionsList).some(
-            (command) => command.key == x.toLowerCase()
+            (command) => command.key.toLowerCase() == x.toLowerCase()
           )
         ) {
           await (this as any)[x](...responseJSON.functionParameters);
@@ -1861,6 +1865,7 @@ class OsuLobbyBot {
       console.log(e);
     }
   }
+
   async getUserPrompt(
     type: ChatWithAIType | undefined,
     callbackDataAndPrompt: string = ""
@@ -2075,15 +2080,14 @@ Response Rules:
 5. You cannot change maps, assign hosts, close/resize the lobby, or kick players by or players request, look at the chat history to see what he did before decide.
 6. Keep your response short and clear, if the Data Type is Messages History, check the chat history, don't repeat your responses.
 
-You can ONLY respond in JSON with this format:
+You can ONLY respond in JSON with this include the following:
 {
   "response": "Your message here after processing the input and context, following the rules, check the message history, don't repeat yourself",
   "functionName": "The function you need to execute, if any.",
   "functionParameters": ["param1", "param2"],
   "isYourResponseSimilarToYourPreviousMessagesInTheChatHistory": "If it's a YES, you should change your response immediately",
   "didYouDoubleCheckYourResponse": "YES or NO"
-}
-  `;
+}`;
   }
 
   async getPlayersInLobbyFormat() {

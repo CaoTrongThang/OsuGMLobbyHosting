@@ -1,5 +1,4 @@
 import * as dotenv from "dotenv";
-import axios from "axios";
 import { HfInference } from "@huggingface/inference";
 
 dotenv.config();
@@ -12,7 +11,7 @@ const hf = new HfInference(apiKey);
 
 export async function chatWithHF(systemMessage: string, userMessage: string) {
   const out = await hf.chatCompletion({
-    model: "meta-llama/Meta-Llama-3-70B-Instruct",
+    model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
     messages: [
       {
         role: "system",
