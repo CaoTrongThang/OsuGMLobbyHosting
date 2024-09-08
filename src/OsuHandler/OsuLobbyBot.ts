@@ -39,13 +39,13 @@ type PlayerChatHistory = {
   message: string;
 };
 
-
-
 type AIresponse = {
   response: string;
-  functionsYouWantToCall : {functionName: string, functionParameters: string}[]
+  functionsYouWantToCall: {
+    functionName: string;
+    functionParameters: string;
+  }[];
   isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory: string;
-  didYouDoubleCheckYourResponse: string;
 };
 
 type PlayersVotesData = {
@@ -158,7 +158,7 @@ class OsuLobbyBot {
   lastMatchDataMaxLength = 10;
   matchHistory: string[] = [];
 
-  messageTimeout = 0
+  messageTimeout = 0;
 
   constructor() {
     this.rotateHostList = [];
@@ -225,7 +225,7 @@ class OsuLobbyBot {
       );
 
       if (!this.osuChannel) {
-        this.closeLobby();
+        this.closelobby();
         return;
       }
 
@@ -316,7 +316,7 @@ class OsuLobbyBot {
             await this.startMatchTimer();
           }
         } catch (e) {
-          await this.closeLobby();
+          await this.closelobby();
           console.log(e);
         }
       });
@@ -331,8 +331,8 @@ class OsuLobbyBot {
       this.osuChannel.on("message", async (message) => {
         if (!this.osuChannel) return;
         let msg = message.message;
-        console.log(`Player ${message.user.username}: ${msg}`);
-        
+        console.log(`~~~ OSU CHAT: ${message.user.username}: ${msg}`);
+
         this.chatHistoryHandler(message);
 
         if (
@@ -340,28 +340,30 @@ class OsuLobbyBot {
           !message.message.startsWith("!") &&
           message.user.username != "ThangProVip"
         ) {
-
-          clearTimeout(this.messageTimeout)
-          this.messageTimeout = Number(setTimeout(async () => {
-            this.chatWithAI(
-              await this.getUserPrompt(
-                "Messages History: Carefully response to them or execute functions if need"
-              )
-            );
-          }, 1000 * 4));
-
+          clearTimeout(this.messageTimeout);
+          this.messageTimeout = Number(
+            setTimeout(async () => {
+              this.chatWithAI(
+                await this.getUserPrompt(
+                  "Messages History: Carefully response to them or execute functions if need"
+                )
+              );
+            }, 1000 * 3)
+          );
         } else if (
           !message.user.username &&
           message.message.toLowerCase().includes("joined in slot")
         ) {
-          clearTimeout(this.messageTimeout)
-          this.messageTimeout = Number(setTimeout(async () => {
-            this.chatWithAI(
-              await this.getUserPrompt(
-                "Messages History: Carefully response to them or execute functions if need"
-              )
-            );
-          }, 1000 * 4));
+          clearTimeout(this.messageTimeout);
+          this.messageTimeout = Number(
+            setTimeout(async () => {
+              this.chatWithAI(
+                await this.getUserPrompt(
+                  "Messages History: Carefully response to them or execute functions if need"
+                )
+              );
+            }, 1000 * 3)
+          );
         }
 
         if (msg.startsWith("!")) {
@@ -371,7 +373,7 @@ class OsuLobbyBot {
               if (
                 x.toLowerCase() == args[0] &&
                 this.getObjectKeyValue(osuCommands.adminFunctionList).some(
-                  (command) => command.key == x.toLowerCase()
+                  (command) => command.key.toLowerCase() == x.toLowerCase()
                 )
               ) {
                 await (this as any)[x](message);
@@ -384,7 +386,7 @@ class OsuLobbyBot {
             if (
               x.toLowerCase() == args[0] &&
               this.getObjectKeyValue(osuCommands.commandsList).some(
-                (command) => command.key == x.toLowerCase()
+                (command) => command.key.toLowerCase() == x.toLowerCase()
               )
             ) {
               (this as any)[x](message);
@@ -398,7 +400,6 @@ class OsuLobbyBot {
         this.isMatchPlaying = false;
         this.totalMatchPlayedFromStartLobby++;
 
-        await this.osuChannel.lobby.updateSettings();
         await this.saveLastMatchData(this.osuChannel.lobby.beatmap);
 
         try {
@@ -435,7 +436,7 @@ class OsuLobbyBot {
           await this.osuChannel?.lobby.setName(this.getLobbyName());
         } catch (e) {
           console.error("ERROR: ", e);
-          this.closeLobby();
+          this.closelobby();
         }
       });
 
@@ -510,7 +511,7 @@ class OsuLobbyBot {
             this.currentBeatmap = this.convertBeatmapV2ToV1(b);
           }
         } catch (e) {
-          await this.closeLobby();
+          await this.closelobby();
           console.log(e);
         }
       });
@@ -540,7 +541,7 @@ class OsuLobbyBot {
         }
       });
     } catch (error) {
-      this.closeLobby();
+      this.closelobby();
       console.error(error);
     }
   }
@@ -649,69 +650,35 @@ class OsuLobbyBot {
 
     return true;
   }
-  getChatHistory(filter: boolean) {
-    if (filter) {
-      return this.playersChatHistory.filter((message) => {
-        if (
-          !this.getObjectKeyValue(osuCommands.commandsList).some(
-            (command) =>
-              message.message.startsWith(command.key) ||
-              message.message.includes(command.value)
-          )
-        ) {
-          if (message.playerName == "ThangProVip" || !message.playerName) {
-            return (
-              !message.message.toLowerCase().includes("!mp map") &&
-              !message.message.toLowerCase().includes("!mp start") &&
-              !message.message.toLowerCase().includes("!mp name") &&
-              !message.message.toLowerCase().includes("!mp settings") &&
-              !message.message
-                .toLowerCase()
-                .includes("!mp changed match mode") &&
-              !message.message.toLowerCase().includes("changed beatmap to") &&
-              !message.message
-                .toLowerCase()
-                .includes("changed match mode to") &&
-              !message.message
-                .toLowerCase()
-                .includes("all players are ready") &&
-              !message.message.toLowerCase().includes("room name:") &&
-              !message.message.toLowerCase().includes("beatmap: http") &&
-              !message.message.toLowerCase().includes("team mode") &&
-              !message.message.toLowerCase().includes("active mods:") &&
-              !message.message.toLowerCase().includes("players: ") &&
-              !message.message.toLowerCase().includes("room name updated") &&
-              !message.message.toLowerCase().includes("https://osu.ppy.sh/u") &&
-              !message.message.toLowerCase().includes("finished playing")
-            );
-          } else {
-            return true;
-          }
-        }
-      });
-    }
-
-    return this.playersChatHistory;
-  }
 
   chatHistoryHandler(message: Banchojs.BanchoMessage) {
-    if (this.playersChatHistory.length > this.maxChatHistoryLength) {
-      for (let index = 0; index < this.playersChatHistory.length; index++) {
-        if (this.playersChatHistory.length <= this.maxChatHistoryLength) {
-          this.playersChatHistory.push({
-            playerName: message.user.username,
-            message: message.message,
-          });
-          break;
-        } else {
-          this.playersChatHistory.shift();
-        }
+    const excludedPhrases = [
+      "!mp map", "!mp start", "!mp name", "!mp settings", 
+      "!mp changed match mode", "changed beatmap to", 
+      "changed match mode to", "all players are ready", 
+      "room name:", "beatmap: http", "team mode", 
+      "active mods:", "players: ", "room name updated", 
+      "https://osu.ppy.sh/u", "finished playing"
+    ];
+  
+    const newMessage = {
+      playerName: message.user.username,
+      message: message.message,
+    };
+  
+    // Check if the new message should be included
+    const messageContent = newMessage.message.toLowerCase();
+    const shouldInclude = newMessage.playerName !== "ThangProVip" &&
+                          excludedPhrases.every(phrase => !messageContent.includes(phrase));
+  
+    if (shouldInclude) {
+      // Add the new message to chat history
+      this.playersChatHistory.push(newMessage);
+  
+      // Ensure chat history does not exceed max length by shifting out oldest messages
+      if (this.playersChatHistory.length > this.maxChatHistoryLength) {
+        this.playersChatHistory.shift();
       }
-    } else {
-      this.playersChatHistory.push({
-        playerName: message.user.username,
-        message: message.message,
-      });
     }
   }
 
@@ -780,7 +747,7 @@ class OsuLobbyBot {
       this.ar = 0;
       max = averageDif * 1.6;
       min = averageDif * 1;
-    } else if (medianPPPoint >= 0 && medianPPPoint <= 10) {
+    } else if (medianPPPoint >= 5 && medianPPPoint <= 10) {
       this.ar = 4;
       max = averageDif * 1.5;
       min = averageDif * 1;
@@ -1021,7 +988,7 @@ class OsuLobbyBot {
       await this.osuChannel.lobby.kickPlayer(`#${player?.user.id}`);
     } catch (e) {
       console.log(e);
-      await this.closeLobby();
+      await this.closelobby();
     }
   }
   async movePlayerToSlot(playerName?: string, slot?: any) {
@@ -1083,8 +1050,8 @@ class OsuLobbyBot {
           - Max Difficulty: ${this.currentMapMaxDif.toFixed(2)}
           - Max Length: ${
             this.roomMode == "Auto Map Pick"
-              ? this.maxLengthForAutoMapPickMode
-              : this.maxLengthForHostRotate
+              ? utils.formatSeconds(this.maxLengthForAutoMapPickMode)
+              : utils.formatSeconds(this.maxLengthForHostRotate)
           }
     
           Searched Beatmap's Info:
@@ -1094,7 +1061,9 @@ class OsuLobbyBot {
           - Beatmap's Difficulty: ${Number(beatmap[0].difficultyrating).toFixed(
             2
           )}
-          - Beatmap's Length: ${beatmap[0].hit_length}
+          - Beatmap's Length: ${utils.formatSeconds(
+            Number(beatmap[0].hit_length)
+          )}
   
           ${
             this.checkBeatmapMeetRequirements(
@@ -1254,9 +1223,11 @@ class OsuLobbyBot {
               beatmaps[i].artist
             }, Difficulty: ${Number(beatmaps[i].difficultyrating).toFixed(
               2
-            )}, BeatmapID: ${beatmaps[i].beatmap_id}, BPM: ${
-              beatmaps[i].bpm
-            }, TAGS: ${beatmaps[i].tags
+            )}, BeatmapID: ${
+              beatmaps[i].beatmap_id
+            }, Length: ${utils.formatSeconds(
+              Number(beatmaps[i].total_length)
+            )} , BPM: ${beatmaps[i].bpm}, TAGS: ${beatmaps[i].tags
               .split(" ")
               .join("-")} , Approach Rate: ${
               beatmaps[i].diff_approach
@@ -1468,7 +1439,7 @@ class OsuLobbyBot {
       }
     } catch (e) {
       console.log(e);
-      await this.closeLobby();
+      await this.closelobby();
     }
   }
 
@@ -1503,7 +1474,7 @@ class OsuLobbyBot {
         this.rotateHostList.map((p) => p.user.username).join(",")
       );
     } catch (e) {
-      await this.closeLobby();
+      await this.closelobby();
       console.log(e);
     }
   }
@@ -1536,7 +1507,7 @@ class OsuLobbyBot {
       };
     } catch (e) {
       console.log(e);
-      this.closeLobby();
+      this.closelobby();
     }
 
     return bmv1;
@@ -1596,7 +1567,7 @@ class OsuLobbyBot {
       }
     } catch (e) {
       await console.log(e);
-      this.closeLobby();
+      this.closelobby();
     }
   }
 
@@ -1777,7 +1748,8 @@ class OsuLobbyBot {
         beatmapStr = "No map is currently in progress";
       }
 
-      const chatHistory = this.getChatHistory(false);
+      const chatHistory = this.playersChatHistory;
+
       const startIndex = chatHistory.length - 5;
       let chathistoryStr = chatHistory
         .slice(startIndex >= 0 ? startIndex : 0, chatHistory.length)
@@ -1846,12 +1818,12 @@ class OsuLobbyBot {
       }
     } catch (e) {
       console.log(e);
-      this.closeLobby();
+      this.closelobby();
     }
   }
   chatHistoryFormat() {
-    if (this.getChatHistory(true).length > 0) {
-      return this.getChatHistory(true)
+    if (this.playersChatHistory.length > 0) {
+      return this.playersChatHistory
         .map((chat, index) => {
           if (!chat.playerName) {
             chat.playerName = "ThangProVip";
@@ -1861,13 +1833,7 @@ class OsuLobbyBot {
             return `- Lobby Manager "${chat.playerName}" (This Is Your Message) Sent: ${chat.message}`;
           }
 
-          if (
-            index == this.getChatHistory(true).length - 1 &&
-            chat.playerName
-          ) {
-            if (this.currentHost?.user.username == chat.playerName) {
-              return `- This Is The Lastest Message (Consider response to it) | [Host] Player "${chat.playerName}" Sent: ${chat.message}`;
-            }
+          if (index == this.playersChatHistory.length - 1 && chat.playerName) {
             return `- This Is The Lastest Message (Consider response to it) | Player "${chat.playerName}" Sent: ${chat.message}`;
           }
 
@@ -1892,7 +1858,7 @@ class OsuLobbyBot {
 
     this.chatTimeout = setTimeout(() => {
       this.canChatWithAI = true;
-    }, 1000 * (Number(process.env.AI_REPLY_COOLDOWN_SECONDS) - 4));
+    }, 1000 * (Number(process.env.AI_REPLY_COOLDOWN_SECONDS) - 2.5));
 
     try {
       let systemPrompt = this.systemMessageFormat();
@@ -1919,14 +1885,16 @@ class OsuLobbyBot {
       if (!responseJSON) return;
 
       if (
-        responseJSON.response == "" && responseJSON.functionsYouWantToCall.length == 0){
-          return;
-        }
+        responseJSON.response == "" &&
+        responseJSON.functionsYouWantToCall.length == 0
+      ) {
+        return;
+      }
 
       if (responseJSON.response) {
         await this.osuChannel?.sendMessage(responseJSON.response);
       }
-      for(const f of responseJSON.functionsYouWantToCall){
+      for (const f of responseJSON.functionsYouWantToCall) {
         for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
           if (
             x.toLowerCase() == f.functionName.toLowerCase() &&
@@ -1937,7 +1905,7 @@ class OsuLobbyBot {
             await (this as any)[x](...f.functionParameters);
           }
         }
-  
+
         for (const x of this.getAllFunctions<OsuLobbyBot>(this)) {
           if (
             x.toLowerCase() == f.functionName.toLowerCase() &&
@@ -1992,7 +1960,7 @@ class OsuLobbyBot {
       this.embedMessage = null;
       this.canUpdateEmbed = true;
     } catch (e) {
-      await this.closeLobby();
+      await this.closelobby();
       console.log(e);
     }
   }
@@ -2006,6 +1974,8 @@ class OsuLobbyBot {
 
     let playerChatHistory = this.chatHistoryFormat();
     let listOfPlayerStr = await this.getPlayersInLobbyFormat();
+
+    console.log("🚀 ~ OsuLobbyBot ~ playerChatHistory:", playerChatHistory);
 
     let lastBm = `Last beatmap's Information: ${this.lastBeatmap?.title} - ${
       this.lastBeatmap?.artist
@@ -2096,8 +2066,8 @@ ${playerChatHistory}`;
 
     if (type == "Checking If Chat Is Active") {
       userPrompt = `
-You're checking the lobby. If you notice the lobby has a lot of players but the chat is quiet, you can try to start a conversation. However, if the chat is already active, let the players continue talking and respond with an empty string.
-If the lobby only has 1 or 2 players and it seems like they just want to play in quiet, just be quiet.
+The match just finished ${this.matchFinishTalkWithAIAfterSeconds} ago, you're checking the lobby. If you notice the lobby has a lot of players but the chat is quiet, you can try to start a conversation. However, if the chat is already active, let the players continue talking and respond with an empty string.
+If the lobby only has 1 or 2 players and it seems like they just want to play in quiet, just be quiet. Or if they asked you something but you forgot to answer, which means your message isn't right after them, you can answer them.
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
@@ -2218,7 +2188,16 @@ Response Rules:
 9. If your response has quotes like "" you can try to escape the quotes using a backslash \\" your your response will get error.
 
 You must respond in JSON with this include the following, you can only respond in JSON:
-{"response": "Your message here after processing the input and context, following the rules, check the message history, don't repeat your message if it has similar context","functionsYouWantToCall": {"functionName": string, "functionParameters": string[]}[],"isYourResponseSimilarToYourPreviousMessagesInTheChatHistory": "If it's a YES, you should change your response immediately","didYouDoubleCheckYourResponse": "YES or NO"}
+{
+  "response": "Your message here after processing the input and context, following the rules, check the message history, don't repeat your message if it has similar context",
+  "functionsYouWantToCall": [
+    {
+      "functionName": "exampleFunctionName",
+      "functionParameters": ["exampleParameter"]
+    }
+  ],
+  "isYourResponseSimilarToYourPreviousMessagesInTheChatHistory": "If it's a YES, you should change your response immediately"
+}
   
 "response" must be a string.
 "functionsYouWantToCall": must be an array of objects.
@@ -2286,7 +2265,7 @@ You must respond in JSON with this include the following, you can only respond i
     return parseFloat(accuracy.toFixed(2));
   };
 
-  async closeLobby(message?: Banchojs.BanchoMessage) {
+  async closelobby(message?: Banchojs.BanchoMessage) {
     console.log("Closing lobby and disconnecting...");
     if (message) {
       if (osuLobby.adminIDs.includes(message?.user.id)) {

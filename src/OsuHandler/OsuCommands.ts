@@ -21,12 +21,12 @@ class OsuCommands {
       "(timeoutSeconds : string) // start a match after timeoutSeconds, the parameter must be a number, maybe around 30, use this when half players are ready, use this function after you used the updatePlayersStates to update all players states",
     changeBeatmapByID:
       "(beatmapID : string) // to change the beatmap by beatmapID, beatmapID must be a number, use this function after you used the function checkBeatmapValidityToChangeBeatmapByID",
-    changeBeatmapByYourOwnData: `(nameOfRequestedPlayer: string) // If the lobby has 1 player, you can just this function if the player don't provide and ID or link for the beatmap but before using this function in a lobby with more than 2 players, ask if they want to change the beatmap. If they agree but don't provide a beatmap ID or link, use this function. It will give you many beatmaps to choose from. Select one that fits the players' preferences and use changeBeatmapByID(beatmapID: string) to set it. It's helpful if players can specify preferred genres.`,
+    changeBeatmapByYourOwnData: `(nameOfRequestedPlayer: string) // If the lobby has 1 player, you must use this function if the player don't provide and ID or link for the beatmap but before using this function in a lobby with more than 2 players, ask if they want to change the beatmap. If they agree but don't provide a beatmap ID or link, use this function. It will give you many beatmaps to choose from. Select one that fits the players' preferences and use changeBeatmapByID(beatmapID: string) to set it. It's helpful if players can specify preferred genres.`,
     doNothing: "This function helps you do nothing",
   };
 
   adminFunctionList = {
-    closeLobby: "close the lobby",
+    closelobby: "close the lobby",
     kickPlayer:
       "kick a player from the lobby, with the function's parameters: playerName: string",
   };
