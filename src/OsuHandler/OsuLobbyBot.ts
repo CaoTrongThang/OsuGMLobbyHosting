@@ -71,7 +71,7 @@ type ChatWithAIType =
   | "Messages History: Carefully response to them or execute functions if need"
   | "Changed Difficulty: The Difficulty Of The Lobby Just Changed Base On Users Ranks"
   | "Required Run Function To Get Data: You required to run functions to get the data for responding to players"
-  | "Match Just Finished";
+  | "Checking If Chat Is Activity";
 
 class OsuLobbyBot {
   osuClient = new Banchojs.BanchoClient({
@@ -409,8 +409,9 @@ class OsuLobbyBot {
           clearTimeout(this.matchFinishTimeoutSaver);
           this.matchFinishTimeoutSaver = Number(
             setTimeout(async () => {
+              if(!this.isMatchPlaying)
               await this.chatWithAI(
-                await this.getUserPrompt("Match Just Finished")
+                await this.getUserPrompt("Checking If Chat Is Activity")
               );
             }, 1000 * this.matchFinishTalkWithAIAfterSeconds)
           );
@@ -1957,11 +1958,9 @@ Message History: (Message History will be listed from newest to latest, the firs
 ${playerChatHistory}`;
     }
 
-    if (type == "Match Just Finished") {
+    if (type == "Checking If Chat Is Activity") {
       userPrompt = `
-The match finished ${
-        this.matchFinishTalkWithAIAfterSeconds
-      } seconds ago. If you notice the lobby has players but the chat is quiet, you can try to start a conversation. However, if the chat is already active, let the players continue talking and respond with an empty string.
+You're checking the lobb. If you notice the lobby has players but the chat is quiet, you can try to start a conversation. However, if the chat is already active, let the players continue talking and respond with an empty string.
 
 Data Type: ${type}
 Current Host Player's Name: ${this.currentHost?.user.username || "No Host"}
