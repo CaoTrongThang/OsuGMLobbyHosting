@@ -546,7 +546,7 @@ class OsuLobbyBot {
     }
   }
 
-  //I want to get the key or the value of the commandsList
+  //I want to get the key or the value of the commandsList.
   getObjectKeyValue(obj: Object) {
     let commands: { key: string; value: string }[] = [];
     for (const x of Object.keys(obj)) {
