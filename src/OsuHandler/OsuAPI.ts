@@ -133,9 +133,7 @@ class OsuAPIRequest {
             Number(b.total_length) <= maxLength &&
             Number(b.difficultyrating) >= minDifficulty &&
             Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) >= ar &&
-            !b.title.toLowerCase().includes("cut ver") &&
-            !b.title.toLowerCase().includes("tv size")
+            Number(b.diff_approach) >= ar
         );
         this.beatmapGetCounter++;
         return filteredBeatmaps;
@@ -146,7 +144,9 @@ class OsuAPIRequest {
             Number(b.total_length) <= maxLength &&
             Number(b.difficultyrating) >= minDifficulty &&
             Number(b.difficultyrating) <= maxDifficulty &&
-            Number(b.diff_approach) >= ar
+            Number(b.diff_approach) >= ar &&
+            !b.title.toLowerCase().includes("cut ver") &&
+            !b.title.toLowerCase().includes("tv size")
         );
 
         if (this.beatmapGetCounter > 7) {
@@ -187,7 +187,7 @@ class OsuAPIRequest {
       const response = await axios.get(OSU_API_URL, {
         params: {
           k: process.env.OSU_API_KEY,
-          b: beatmapID
+          b: beatmapID,
         },
       });
       let beatmaps: Beatmap[] = response.data;
