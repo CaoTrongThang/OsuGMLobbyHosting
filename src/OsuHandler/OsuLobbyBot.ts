@@ -2168,7 +2168,8 @@ Useful Links:
   - https://catboy.best/d/<beatmapset_id>
   - https://nerinyan.moe/d/<beatmapset_id>
 - Official Discord: https://discord.gg/game-mlem-686218489396068373
-- Voice Chat: https://discord.gg/tWuRGWgMJ3
+- Discord Voice Chat: https://discord.gg/tWuRGWgMJ3
+- Paypal to donate to keep the lobby alive: https://www.paypal.com/paypalme/trongthangg?country.x=VN&locale.x=en_US
 
 Osu! Mods, if you want to remove some mods, you have to put the "-" infront of the mod, example: "-hr -dt" will remove the hr and dt mod, and "hr dt" without the "-" will add hr and dt mod, here's the Mods list:
 - freemod means remove all the current mods
