@@ -18,7 +18,7 @@ class OsuCommands {
     changeLobbyMods:
       "(mods : string) // to change the Lobby's mods, if the lobby has 2 or more players, ask them if they want to change the mod to the requested mods, respond them if not enough players want to change the mod, can only use 3 mods at a time, if the lobby has only 1 player, just pick what the requested you.",
     startMatchTimer:
-      "(timeoutSeconds : string) // start a match after timeoutSeconds, the parameter must be a number, maybe around 30, use this when half players are ready, use this function after you used the updatePlayersStates to update all players states",
+      "(timeoutSeconds : string) // start a match after timeoutSeconds, the parameter must be a number, maybe around 15 to 30 seconds, use this when more than half completed downloading the beatmap, use this function after you used the updatePlayersStates to update all players states",
     changeBeatmapByID:
       "(beatmapID : string) // to change the beatmap by beatmapID, beatmapID must be a number, use this function after you used the function checkBeatmapValidityToChangeBeatmapByID",
     changeBeatmapByYourOwnData: `(nameOfRequestedPlayer: string) // If the lobby has 1 player, you must use this function if the player don't provide and ID or link for the beatmap but before using this function in a lobby with more than 2 players, ask if they want to change the beatmap. If they agree but don't provide a beatmap ID or link, use this function. It will give you many beatmaps to choose from. Select one that fits the players' preferences and use changeBeatmapByID(beatmapID: string) to set it. It's helpful if players can specify preferred genres.`,

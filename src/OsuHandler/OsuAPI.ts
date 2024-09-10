@@ -104,7 +104,7 @@ export type PlayerTopPlays = {
 class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
-  beatmapGetCounter = 5;
+  beatmapGetCounter = 0;
   async getRandomBeatmaps(
     minDifficulty: number,
     maxDifficulty: number,
@@ -120,13 +120,13 @@ class OsuAPIRequest {
           k: process.env.OSU_API_KEY,
           m: 0,
           since: sinceDay,
-          limit: 150,
+          limit: 120,
         },
       });
       let beatmaps: Beatmap[] = response.data;
 
       let filteredBeatmaps;
-      if (this.beatmapGetCounter < 6) {
+      if (this.beatmapGetCounter > 6) {
         filteredBeatmaps = beatmaps.filter(
           (b) =>
             Number(b.playcount) >= 5000 &&
@@ -148,11 +148,11 @@ class OsuAPIRequest {
             Number(b.difficultyrating) <= maxDifficulty &&
             Number(b.diff_approach) >= ar
         );
-        if (this.beatmapGetCounter > 6) {
+
+        if (this.beatmapGetCounter > 7) {
           this.beatmapGetCounter = 0;
         }
         this.beatmapGetCounter++;
-        
         return filteredBeatmaps;
       }
     } catch (error) {

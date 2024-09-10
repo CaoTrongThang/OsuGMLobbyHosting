@@ -48,13 +48,6 @@ type AIresponse = {
   isYourResponseSimilarToAnyOfYourPreviousMessagesInTheHistory: string;
 };
 
-type PlayersVotesData = {
-  player: Banchojs.BanchoLobbyPlayer;
-  voteskipmap: number;
-  voteskiphost: number;
-  voteabort: number;
-  votestart: number;
-};
 
 type VoteType =
   | "Skip Map"
@@ -62,11 +55,11 @@ type VoteType =
   | "Abort Match"
   | "Start Match"
   | "Change Mode";
-
-type VoteData = {
-  player: Banchojs.BanchoUser;
-  voteType: VoteType;
-};
+  
+  type VoteData = {
+    player: Banchojs.BanchoUser;
+    voteType: VoteType;
+  };
 
 type ChatWithAIType =
   | "Messages History: Carefully response to them or execute functions if need"
@@ -153,7 +146,6 @@ class OsuLobbyBot {
   lastLobbyName = "";
 
   voteData: VoteData[] = [];
-  playerVotesData: PlayersVotesData[] = [];
 
   lastMatchDataMaxLength = 10;
   matchHistory: string[] = [];
@@ -177,7 +169,7 @@ class OsuLobbyBot {
   }
 
   async init() {
-    await this.osuClient.connect();
+      await this.osuClient.connect();
   }
 
   async start() {
@@ -673,6 +665,9 @@ class OsuLobbyBot {
   
     if (shouldInclude) {
       // Add the new message to chat history
+      if(newMessage.message.length > 200){
+        newMessage.message = newMessage.message.slice(0, 200) + "[This message has been cutted by the System because the message is too long]"
+      }
       this.playersChatHistory.push(newMessage);
   
       // Ensure chat history does not exceed max length by shifting out oldest messages
@@ -1040,10 +1035,10 @@ class OsuLobbyBot {
       }
       let prompt = ``;
       if (!beatmap || !beatmap[0]) {
-        prompt = `Players asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmapByID, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID or link`;
+        prompt = `You just used the checkBeatmapValidityToChangeBeatmapByID, and you found no data about the beatmap, maybe you need to ask them for a better beatmapID or link`;
       }
       if (this.rotateHostList.length >= 2 && beatmap && beatmap[0]) {
-        prompt = `Players asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmapByID, and you got all the data below, if you think the map fits all the requirements, you can use changeBeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
+        prompt = `You just used the checkBeatmapValidityToChangeBeatmapByID, and you got all the data below, if you think the map fits all the requirements, you can use changeBeatmap(beatmapID : string), also you can have some response for the map, like what's this song about, just for fun:
           
           Lobby's Requirements:
           - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
@@ -1076,7 +1071,7 @@ class OsuLobbyBot {
           }
           `;
       } else if (this.rotateHostList.length == 1 && beatmap && beatmap[0]) {
-        prompt = `A player asked you to change the map, so you used the checkBeatmapValidityToChangeBeatmapByID function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changeBeatmap(beatmapID : string) function:
+        prompt = `You just used the checkBeatmapValidityToChangeBeatmapByID function, and you found the data about the beatmap, but there's only 1 player in the Lobby, you might don't want to care about the lobby's requirements for beatmaps anymore and use the changeBeatmap(beatmapID : string) function:
 
           Lobby's Requirements:
           - Min Difficulty: ${this.currentMapMinDif.toFixed(2)}
@@ -1118,17 +1113,19 @@ class OsuLobbyBot {
       let playerStates = await this.getPlayersStates();
 
       if (!playerStates) return;
-      prompt = `Players asked you to start the map, so you used the updatePlayersStates function, after updated players states, if half players aren't ready, you must respond an empty string or tell them, but i recommend respond an emptry string. If half of them are ready, you need to use function startMatchTimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
+      prompt = `You just used the updatePlayersStates function, after updated players states, if half players aren't ready, you can respond an empty string or tell them, but i recommend respond an emptry string. If half of them are ready or most already completed downloading map, which mean they've the beatmap, you need to use function startMatchTimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
         Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startMatchTimer(timeoutSeconds : string):
         
         ${
-          playerStates?.totalReady == playerStates?.totalPlayer / 2
-            ? "I think half players are ready"
-            : "I think half players aren't ready"
+          (playerStates?.totalReady + playerStates.totalNotReady) >= playerStates?.totalPlayer / 2
+            ? "I think half players are ready to play"
+            : "I think half players aren't ready to play"
         }
 
-        - Total players: ${playerStates?.totalPlayer}
-        - Total ready: ${playerStates?.totalReady}
+        - Total players: ${playerStates.totalPlayer}
+        - Total ready: ${playerStates.totalReady}
+        - Total not ready: ${playerStates.totalNotReady}
+        - Total no map: ${playerStates.totalNoMap}
 
         `;
 
@@ -2133,7 +2130,7 @@ Restrictions:
 - You are forbidden from voting for or against other players.
 - If there are no players in the lobby, you must remain silent.
 
-Available Commands, Players Can Only Use These Commandsm there's no other commands like "!ready, !start,...":
+Available Commands For Players, Players Can Only Use These Commands, there's no other commands like "!ready, !start,...":
 - The following commands can be triggered using the "!" prefix:
 ${this.getObjectKeyValue(osuCommands.commandsList)
   .map((cmd) => `- ${cmd.key}`)
