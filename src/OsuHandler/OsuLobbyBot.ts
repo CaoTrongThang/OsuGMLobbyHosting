@@ -98,7 +98,7 @@ class OsuLobbyBot {
 
   playersChatHistory: PlayerChatHistory[] = [];
 
-  maxChatHistoryLength = 35;
+  maxChatHistoryLength = 30;
 
   totalMatchPlayedFromStartLobby = 0;
 
@@ -132,7 +132,7 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 165;
+  startMatchTimeout = 100;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -331,20 +331,6 @@ class OsuLobbyBot {
           message.user.username != undefined &&
           !message.message.startsWith("!") &&
           message.user.username != "ThangProVip"
-        ) {
-          clearTimeout(this.messageTimeout);
-          this.messageTimeout = Number(
-            setTimeout(async () => {
-              this.chatWithAI(
-                await this.getUserPrompt(
-                  "Messages History: Carefully response to them or execute functions if need"
-                )
-              );
-            }, 1000 * 3)
-          );
-        } else if (
-          !message.user.username &&
-          message.message.toLowerCase().includes("joined in slot")
         ) {
           clearTimeout(this.messageTimeout);
           this.messageTimeout = Number(
@@ -1113,8 +1099,8 @@ class OsuLobbyBot {
       let playerStates = await this.getPlayersStates();
 
       if (!playerStates) return;
-      prompt = `You just used the updatePlayersStates function, after updated players states, if half players aren't ready, you can respond an empty string or tell them, but i recommend respond an emptry string. If half of them are ready or most already completed downloading map, which mean they've the beatmap, you need to use function startMatchTimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
-        Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startMatchTimer(timeoutSeconds : string):
+      prompt = `You just used the updatePlayersStates function, after updated players states, if half players don't have the beatmap, you can respond an empty string or tell them, but i recommend respond an emptry string. If half of them are ready or most already completed downloading map, which mean they've the beatmap, you need to use function startMatchTimer(timeoutSeconds : string), the timeoutSeconds must be a number, maybe 20 - 60 depends on number of players the room
+        Here's the data you got from the updatePlayersStates function, if half players of the total players are ready, use the startMatchTimer(timeoutSeconds : string), there's a command !votestartmatch to vote start the match soon too:
         
         ${
           (playerStates?.totalReady + playerStates.totalNotReady) >= playerStates?.totalPlayer / 2
@@ -1124,7 +1110,7 @@ class OsuLobbyBot {
 
         - Total players: ${playerStates.totalPlayer}
         - Total ready: ${playerStates.totalReady}
-        - Total not ready: ${playerStates.totalNotReady}
+        - Total have map: ${playerStates.totalNotReady}
         - Total no map: ${playerStates.totalNoMap}
 
         `;
