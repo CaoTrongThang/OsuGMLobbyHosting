@@ -50,9 +50,12 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 Create a `.env` file in the root of your project and configure the following environment variables:
 
 ```env
+USE_AI = false //if the USE_AI is false, you don't need to worry about any AI things down here
 HUGGING_FACE_API_KEY = "KEY HERE, MUST BE A PRO VERSION OF HUGGING FACE, or you can try to change the AI and change way the function chatWithAI worth"
 AI_MODEL = "meta-llama/Meta-Llama-3.1-70B-Instruct" //The model of the AI on Hugging Face, lot of them can't be used, choose wisely
-AI_REPLY_COOLDOWN_SECONDS = "7" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
+AI_REPLY_COOLDOWN_SECONDS = "8" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
+
+LOBBY_PASSWORD = "NONE" //no password = NONE
 
 DISCORD_BOT_TOKEN = "your_discord_bot_token"
 DISCORD_BOT_ID = "your_discord_bot_id"
