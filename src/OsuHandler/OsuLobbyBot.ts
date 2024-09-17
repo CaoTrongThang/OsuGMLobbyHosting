@@ -245,47 +245,45 @@ class OsuLobbyBot {
         if (!this.osuChannel) return;
         console.log(`+ ${lobbyPlayer.player.user.username} joined the lobby`);
         await this.updateRotateHostList(lobbyPlayer.player, "joined");
-
-        if (this.roomMode == "Host Rotate") {
-          if (this.rotateHostList.length == 1) {
-            await this.hostRotate();
+        if(lobbyPlayer.player.user.ppRank <= 1000000){
+          if (this.roomMode == "Host Rotate") {
+            if (this.rotateHostList.length == 1) {
+              await this.hostRotate();
+            }
           }
-        }
-
-        if (this.roomMode == "Auto Map Pick") {
-          if (this.rotateHostList.length == 1) {
-            await this.changeDifficultyBaseOnPlayersRank();
-            
-            console.log("🚀 ~ OsuLobbyBot ~ this.osuChannel.lobby.on ~ this.currentBeatmap?.difficultyrating:", this.currentBeatmap?.difficultyrating)
-            console.log("🚀 ~ OsuLobbyBot ~ this.osuChannel.lobby.on ~ this.currentBeatmap:", this.currentBeatmap)
-            console.log("🚀 ~ OsuLobbyBot ~ this.osuChannel.lobby.on ~ this.currentBeatmap?.beatmap_id:", this.currentBeatmap?.beatmap_id)
-            console.log("🚀 ~ OsuLobbyBot ~ this.osuChannel.lobby.on ~ this.lastBeatmap?.id:", this.lastBeatmap?.id)
-
-            if (this.currentBeatmap) {
-              if (
-                Number(this.currentBeatmap?.difficultyrating) <=
-                  this.currentMapMinDif ||
-                Number(this.currentBeatmap?.difficultyrating) >=
-                  this.currentMapMaxDif
-              ) {
-                await this.autoMapPick();
-              } else if (
-                this.lastBeatmap?.id == Number(this.currentBeatmap?.beatmap_id)
-
-              ) {
+  
+          if (this.roomMode == "Auto Map Pick") {
+            if (this.rotateHostList.length == 1) {
+              await this.changeDifficultyBaseOnPlayersRank();
+  
+              if (this.currentBeatmap) {
+                if (
+                  Number(this.currentBeatmap?.difficultyrating) <=
+                    this.currentMapMinDif ||
+                  Number(this.currentBeatmap?.difficultyrating) >=
+                    this.currentMapMaxDif
+                ) {
+                  await this.autoMapPick();
+                } else if (
+                  this.lastBeatmap?.id == Number(this.currentBeatmap?.beatmap_id)
+  
+                ) {
+                  await this.autoMapPick();
+                }
+              } else {
                 await this.autoMapPick();
               }
-            } else {
-              await this.autoMapPick();
             }
           }
-        }
-        if (!this.isMatchStarting && !this.useAI) {
-          if (this.roomMode == "Auto Map Pick") {
-            if (this.rotateHostList.length >= 5) {
-              await this.startMatchTimer(this.startMatchTimeout);
+          if (!this.isMatchStarting && !this.useAI) {
+            if (this.roomMode == "Auto Map Pick") {
+              if (this.rotateHostList.length >= 5) {
+                await this.startMatchTimer(this.startMatchTimeout);
+              }
             }
           }
+        } else {
+          await this.osuChannel.lobby.kickPlayer(`${lobbyPlayer.player.user.username}`)
         }
       });
 
@@ -295,6 +293,7 @@ class OsuLobbyBot {
           console.log(`- ${lobbyPlayer.user.username} left the lobby`);
 
           if (this.rotateHostList.length == 0) {
+            await this.osuChannel?.lobby.setMods([], true);
             await this.changeDifficultyBaseOnPlayersRank();
             await this.osuChannel?.lobby.setName(this.getLobbyName());
             return;
