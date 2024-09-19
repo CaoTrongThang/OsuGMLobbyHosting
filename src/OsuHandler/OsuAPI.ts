@@ -105,6 +105,8 @@ class OsuAPIRequest {
   osuAPIKey: OsuAPIKey | null = null;
 
   beatmapGetCounter = 0;
+
+  //TODO PICK LESS LOW LENGTH BEATMAP, LETS "SPED UP" MAPS
   async getRandomBeatmaps(
     minDifficulty: number,
     maxDifficulty: number,
@@ -135,7 +137,7 @@ class OsuAPIRequest {
             Number(b.difficultyrating) <= maxDifficulty &&
             Number(b.diff_approach) >= ar
         );
-        this.beatmapGetCounter++;
+        this.beatmapGetCounter = 0;
         return filteredBeatmaps;
       } else {
         filteredBeatmaps = beatmaps.filter(
@@ -146,12 +148,12 @@ class OsuAPIRequest {
             Number(b.difficultyrating) <= maxDifficulty &&
             Number(b.diff_approach) >= ar &&
             !b.title.toLowerCase().includes("cut ver") &&
-            !b.title.toLowerCase().includes("tv size")
+            !b.title.toLowerCase().includes("tv size") &&
+            !b.title.toLowerCase().includes("sped up") &&
+            !b.title.toLowerCase().includes("tv size") &&
+            !b.title.toLowerCase().includes("speed up") &&
+            !b.title.toLowerCase().includes("(cv:")
         );
-
-        if (this.beatmapGetCounter > 7) {
-          this.beatmapGetCounter = 0;
-        }
         this.beatmapGetCounter++;
         return filteredBeatmaps;
       }

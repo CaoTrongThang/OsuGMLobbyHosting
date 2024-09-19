@@ -251,10 +251,11 @@ class OsuLobbyBot {
               await this.hostRotate();
             }
           }
-  
+
+          await this.changeDifficultyBaseOnPlayersRank();
+          
           if (this.roomMode == "Auto Map Pick") {
             if (this.rotateHostList.length == 1) {
-              await this.changeDifficultyBaseOnPlayersRank();
   
               if (this.currentBeatmap) {
                 if (
@@ -421,7 +422,7 @@ class OsuLobbyBot {
               await this.autoMapPick(),
             ]);
 
-            if (this.rotateHostList.length >= 6) {
+            if (this.rotateHostList.length >= 4) {
               this.startMatchTimer(this.startMatchTimeout);
             }
           }

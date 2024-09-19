@@ -1,3 +1,4 @@
+//TODO !VOTEMAP COMMAND, !votemap <link or id>
 class OsuCommands {
   commandsList = {
     rhelp: "// Use it to get all the commands for players",
