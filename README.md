@@ -53,26 +53,27 @@ Create a `.env` file in the root of your project and configure the following env
 USE_AI = false //if the USE_AI is false, you don't need to worry about any AI things down here
 HUGGING_FACE_API_KEY = "KEY HERE, MUST BE A PRO VERSION OF HUGGING FACE, or you can try to change the AI and change way the function chatWithAI worth"
 AI_MODEL = "meta-llama/Meta-Llama-3.1-70B-Instruct" //The model of the AI on Hugging Face, lot of them can't be used, choose wisely
-AI_REPLY_COOLDOWN_SECONDS = "8" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
+AI_REPLY_COOLDOWN_SECONDS = "7" //I don't know what's the limit of HUGGING FACE so i'll just leave 7 here
 
-LOBBY_PASSWORD = "NONE" //no password = NONE
+LOBBY_PASSWORD = "NONE"
 
-DISCORD_BOT_TOKEN = "your_discord_bot_token"
-DISCORD_BOT_ID = "your_discord_bot_id"
+USE_DISCORD = false
+DISCORD_BOT_TOKEN = ""
+DISCORD_BOT_ID = "984240904871219200"
+DISCORD_GUILD_ID = ""
+DISORD_OSU_LOBBLY_STATS_CHANNEL_ID = ""
 
-DISCORD_GUILD_ID = "your_discord_guild_id"
-DISCORD_OSU_LOBBY_STATS_CHANNEL_ID = "your_discord_osu_lobby_stats_channel_id"
+# MONGO_URL = ""
+# MONGO_DB_PASSWORD = ""
+# MONGO_OSU_DB_NAME = "OsuLobbyData"
+# MONGO_OSU_DB_COLLECTION = "OsuPlayerData"
 
-MONGO_URL = "your_mongo_url"
-MONGO_DB_PASSWORD = "your_mongo_db_password"
-MONGO_OSU_DB_NAME = "OsuLobbyData"
-MONGO_OSU_DB_COLLECTION = "OsuPlayerData"
+OSU_ADMIN_IDs = ""
 
-OSU_ADMIN_IDs = "123124 342351"
 OSU_IRC_PORT=6667
-OSU_IRC_USERNAME="your_osu_irc_username"
-OSU_IRC_PASSWORD="your_osu_irc_password"
-OSU_API_KEY="your_osu_api_key"
+OSU_IRC_USERNAME="ThangProVip"
+OSU_IRC_PASSWORD="ea637f54"
+OSU_LEGACY_API_KEY="56c959df9e054e9543994054fcb2e6fb7f22f4d8"
 ```
 
 ## Getting Started
@@ -139,6 +140,7 @@ Me and my mate are playing visual studio code right here :>
 ![image](https://github.com/user-attachments/assets/40e49783-031b-4bee-8985-acb789e98c4a)
 
 Testers:
+
 - Me
 - Rot4tion
 - TinsLevis
@@ -151,4 +153,3 @@ Testers:
 - Andirus
 - dasher1505
 - ... And some players joined the lobby to play but never gotten to play
-

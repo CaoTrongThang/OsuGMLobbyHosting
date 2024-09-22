@@ -119,7 +119,7 @@ class OsuAPIRequest {
 
       const response = await axios.get(OSU_API_URL, {
         params: {
-          k: process.env.OSU_API_KEY,
+          k: process.env.OSU_LEGACY_API_KEY,
           m: 0,
           since: sinceDay,
           limit: 120,
@@ -169,7 +169,7 @@ class OsuAPIRequest {
 
       const response = await axios.get(OSU_API_URL, {
         params: {
-          k: process.env.OSU_API_KEY,
+          k: process.env.OSU_LEGACY_API_KEY,
           b: beatmapID,
           limit: 1,
         },
@@ -188,7 +188,7 @@ class OsuAPIRequest {
 
       const response = await axios.get(OSU_API_URL, {
         params: {
-          k: process.env.OSU_API_KEY,
+          k: process.env.OSU_LEGACY_API_KEY,
           b: beatmapID,
         },
       });
@@ -204,7 +204,7 @@ class OsuAPIRequest {
     let url = `https://osu.ppy.sh/api/get_user`;
     const response = await axios(url, {
       params: {
-        k: process.env.OSU_API_KEY,
+        k: process.env.OSU_LEGACY_API_KEY,
         m: 0,
         u: userID,
       },
@@ -221,7 +221,7 @@ class OsuAPIRequest {
     let url = `https://osu.ppy.sh/api/get_user_best`;
     const response = await axios(url, {
       params: {
-        k: process.env.OSU_API_KEY,
+        k: process.env.OSU_LEGACY_API_KEY,
         m: 0,
         limit: 1,
         u: userID,
@@ -239,7 +239,7 @@ class OsuAPIRequest {
     let url = `https://osu.ppy.sh/api/get_user_recent`;
     const response = await axios(url, {
       params: {
-        k: process.env.OSU_API_KEY,
+        k: process.env.OSU_LEGACY_API_KEY,
         m: 0,
         limit: 1,
         u: userID,

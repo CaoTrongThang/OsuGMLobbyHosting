@@ -70,7 +70,7 @@ class OsuLobbyBot {
   osuClient = new Banchojs.BanchoClient({
     username: process.env.OSU_IRC_USERNAME!,
     password: process.env.OSU_IRC_PASSWORD!,
-    apiKey: process.env.OSU_API_KEY,
+    apiKey: process.env.OSU_LEGACY_API_KEY,
   });
 
   osuChannel: Banchojs.BanchoMultiplayerChannel | undefined;
@@ -154,12 +154,12 @@ class OsuLobbyBot {
 
   constructor() {
     this.rotateHostList = [];
-    if (process.env.USE_AI == "true") {
+    if (process.env.USE_AI?.toLowerCase() == "true") {
       this.useAI = true;
-      console.error("USE AI: ", this.useAI);
+      console.error("USE AI:", this.useAI);
     } else {
       this.useAI = false;
-      console.error("USE AI: ", this.useAI);
+      console.error("USE AI:", this.useAI);
     }
     process.on("SIGINT", async () => {
       console.log("DISCONNECTING WITH LOBBY...");
@@ -226,10 +226,12 @@ class OsuLobbyBot {
         this.closelobby();
         return;
       }
-      if(process.env.LOBBY_PASSWORD?.toLowerCase() == "none"){
+      if (process.env.LOBBY_PASSWORD?.toLowerCase() == "none") {
         await this.osuChannel.lobby.setPassword(``);
       } else {
-        await this.osuChannel.lobby.setPassword(`${process.env.LOBBY_PASSWORD}`);
+        await this.osuChannel.lobby.setPassword(
+          `${process.env.LOBBY_PASSWORD}`
+        );
       }
 
       await this.autoMapPick();
@@ -245,7 +247,7 @@ class OsuLobbyBot {
         if (!this.osuChannel) return;
         console.log(`+ ${lobbyPlayer.player.user.username} joined the lobby`);
         await this.updateRotateHostList(lobbyPlayer.player, "joined");
-        if(lobbyPlayer.player.user.ppRank <= 1000000){
+        if (lobbyPlayer.player.user.ppRank <= 1000000) {
           if (this.roomMode == "Host Rotate") {
             if (this.rotateHostList.length == 1) {
               await this.hostRotate();
@@ -253,10 +255,9 @@ class OsuLobbyBot {
           }
 
           await this.changeDifficultyBaseOnPlayersRank();
-          
+
           if (this.roomMode == "Auto Map Pick") {
             if (this.rotateHostList.length == 1) {
-  
               if (this.currentBeatmap) {
                 if (
                   Number(this.currentBeatmap?.difficultyrating) <=
@@ -266,8 +267,8 @@ class OsuLobbyBot {
                 ) {
                   await this.autoMapPick();
                 } else if (
-                  this.lastBeatmap?.id == Number(this.currentBeatmap?.beatmap_id)
-  
+                  this.lastBeatmap?.id ==
+                  Number(this.currentBeatmap?.beatmap_id)
                 ) {
                   await this.autoMapPick();
                 }
@@ -284,7 +285,9 @@ class OsuLobbyBot {
             }
           }
         } else {
-          await this.osuChannel.lobby.kickPlayer(`${lobbyPlayer.player.user.username}`)
+          await this.osuChannel.lobby.kickPlayer(
+            `${lobbyPlayer.player.user.username}`
+          );
         }
       });
 
@@ -1728,6 +1731,7 @@ class OsuLobbyBot {
 
   embedMessage: Message | null = null;
   async updateEmbed() {
+    if (!discordClient) return;
     try {
       if (!this.canUpdateEmbed) return;
       const channel = (await discordClient.channels.fetch(
@@ -1979,6 +1983,7 @@ class OsuLobbyBot {
   }
 
   async deleteAllMessagesInOsuLobbyChannel() {
+    if (!discordClient) return;
     try {
       const channel = (await discordClient.channels.fetch(
         process.env.DISCORD_OSU_LOBBLY_STATS_CHANNEL_ID || ""
