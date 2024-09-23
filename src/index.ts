@@ -57,6 +57,7 @@ export let discordClient: Client | null = new Client({
   ],
 });
 
+//Hello
 (async () => {
   if (process.env.USE_DISCORD?.toLowerCase() == "true") {
     try {
