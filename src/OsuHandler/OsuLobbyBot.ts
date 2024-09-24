@@ -167,11 +167,12 @@ class OsuLobbyBot {
       await this.osuChannel?.lobby.closeLobby();
       await this.osuClient.disconnect();
     });
+    if (!(process.env.OSU_ADMIN_IDs!.toLowerCase() == "none")) {
+      let adminIDs = process.env.OSU_ADMIN_IDs!.split(" ");
 
-    let adminIDs = process.env.OSU_ADMIN_IDs!.split(" ");
-
-    for (let i = 0; i < adminIDs.length; i++) {
-      this.adminIDs.push(Number(adminIDs[i]));
+      for (let i = 0; i < adminIDs.length; i++) {
+        this.adminIDs.push(Number(adminIDs[i]));
+      }
     }
   }
 
