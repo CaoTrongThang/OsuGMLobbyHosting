@@ -1585,7 +1585,7 @@ class OsuLobbyBot {
         const msg = `Picked Map: ${bm.title} - ${bm.artist} (${Number(
           bm.difficultyrating
         ).toFixed(2)}*): ${bm.bpm} BPM - ${utils.formatSeconds(
-          Number(length)
+          Number(bm.total_length)
         )} - ${bm.diff_size} CS, ${bm.diff_approach} AR`;
 
         await this.osuChannel.sendMessage(msg);
