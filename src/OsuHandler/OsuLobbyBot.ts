@@ -1588,14 +1588,14 @@ class OsuLobbyBot {
           Number(bm.total_length)
         )} - ${bm.diff_size} CS, ${bm.diff_approach} AR`;
 
-        await this.osuChannel.sendMessage(msg);
         console.log(msg);
 
-        if (this.useAI == false) {
-          await this.osuChannel.sendMessage(
+        await Promise.all([
+          this.osuChannel.sendMessage(msg),
+          this.osuChannel.sendMessage(
             `Faster Link: https://catboy.best/d/${bm.beatmapset_id} - https://nerinyan.moe/d/${bm.beatmapset_id}`
-          );
-        }
+          ),
+        ]);
       }
     } catch (e) {
       await console.log(e);
