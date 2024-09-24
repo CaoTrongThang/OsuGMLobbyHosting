@@ -503,15 +503,7 @@ class OsuLobbyBot {
                     beatmap_id: b.beatmapId,
                     beatmapset_id: b.beatmapSetId,
                   };
-                this.beatmapInfoSendChannel(
-                  b.title,
-                  b.artist,
-                  b.difficultyRating.toString(),
-                  b.bpm.toString(),
-                  b.totalLength.toString(),
-                  b.circleSize.toString(),
-                  b.approachRate.toString()
-                );
+                this.beatmapInfoSendChannel(this.convertBeatmapV2ToV1(b));
               }
             }
           } else {
@@ -1582,38 +1574,28 @@ class OsuLobbyBot {
       Number(beatmap[randomBeatmapIndex].beatmap_id)
     );
 
-    this.beatmapInfoSendChannel(
-      bm.title,
-      bm.artist,
-      bm.difficultyrating,
-      bm.bpm,
-      bm.total_length,
-      bm.diff_size,
-      bm.diff_approach
-    );
+    this.beatmapInfoSendChannel(bm);
 
     beatmap = [];
   }
 
-  async beatmapInfoSendChannel(
-    title: string,
-    artis: string,
-    difficulty: string,
-    bpm: string,
-    length: string,
-    circleSize: string,
-    approachRate: string
-  ) {
+  async beatmapInfoSendChannel(bm: Beatmap | undefined) {
     try {
-      if (this.osuChannel) {
-        const msg = `Picked Map: ${title} - ${artis} (${Number(
-          difficulty
-        ).toFixed(2)}*): ${bpm} BPM - ${utils.formatSeconds(
+      if (this.osuChannel && bm) {
+        const msg = `Picked Map: ${bm.title} - ${bm.artist} (${Number(
+          bm.difficultyrating
+        ).toFixed(2)}*): ${bm.bpm} BPM - ${utils.formatSeconds(
           Number(length)
-        )} - ${circleSize} CS, ${approachRate} AR`;
+        )} - ${bm.diff_size} CS, ${bm.diff_approach} AR`;
 
         await this.osuChannel.sendMessage(msg);
         console.log(msg);
+
+        if (this.useAI == false) {
+          await this.osuChannel.sendMessage(
+            `Faster Link: https://catboy.best/d/${bm.beatmapset_id} - https://nerinyan.moe/d/${bm.beatmapset_id}`
+          );
+        }
       }
     } catch (e) {
       await console.log(e);
