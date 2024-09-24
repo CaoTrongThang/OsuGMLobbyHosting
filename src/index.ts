@@ -69,7 +69,7 @@ export let discordClient: Client | null = new Client({
   } else {
     discordClient = null;
   }
-  console.error("USE AI:", process.env.USE_DISCORD?.toLowerCase());
+  console.error("USE DISCORD:", process.env.USE_DISCORD?.toLowerCase());
 })();
 
 osuLobby.start();
