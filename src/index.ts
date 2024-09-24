@@ -2,27 +2,8 @@ import osuLobby from "./OsuHandler/OsuLobbyBot";
 import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import * as http from "http";
-import { MongoClient } from "mongodb";
-import osuAPIRequest from "./OsuHandler/OsuAPI";
-import { log } from "console";
 
 dotenv.config();
-
-// //CONNECT TO MONGODB
-// let MONGO_URL = process.env.MONGO_URL;
-// MONGO_URL = MONGO_URL?.replace("<db_password>", process.env.MONGO_DB_PASSWORD!);
-
-// export const dbClient = new MongoClient(MONGO_URL!);
-
-// async () => {
-//   console.log("Connecting to database");
-//   try {
-//     await dbClient.connect();
-//     console.log("Successfully Connected!");
-//   } catch {
-//     console.log("Connected Fail!");
-//   }
-// };
 
 const PORT = process.env.PORT || 3000;
 
