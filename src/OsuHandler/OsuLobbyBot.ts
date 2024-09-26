@@ -317,7 +317,7 @@ class OsuLobbyBot {
               this.autoMapPick();
             }
           }
-
+          //Test
           if (
             lobbyPlayer.user.id == this.currentHost?.user.id &&
             this.roomMode == "Host Rotate"
