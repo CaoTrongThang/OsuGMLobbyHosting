@@ -53,7 +53,8 @@ type VoteType =
   | "Skip Host"
   | "Abort Match"
   | "Start Match"
-  | "Change Mode";
+  | "Change Mode"
+  | "Last Map";
 
 type VoteData = {
   player: Banchojs.BanchoUser;
@@ -131,7 +132,7 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 100;
+  startMatchTimeout = 60;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -981,6 +982,25 @@ class OsuLobbyBot {
       this.resetVote("Skip Map");
     }
   }
+
+  async votelastmap(message?: Banchojs.BanchoMessage, playerName?: string) {
+    if (!this.osuChannel || !this.lastBeatmap) return;
+
+    if (this.rotateHostList.length < 1) {
+      return;
+    }
+
+    this.voteHandler(message, "Last Map", playerName);
+
+    if (
+      this.voteData.filter((v) => v.voteType == "Last Map").length >
+      this.rotateHostList.length / 3
+    ) {
+      await this.osuChannel.lobby.setMap(this.lastBeatmap.beatmapId);
+      this.resetVote("Last Map");
+    }
+  }
+
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     if (
