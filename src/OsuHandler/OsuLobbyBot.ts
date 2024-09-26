@@ -108,7 +108,7 @@ class OsuLobbyBot {
 
   medianPPPoint = 0;
 
-  minPlayersNeededToChangeMode = 15;
+  minPlayersNeededToChangeMode = 16;
 
   ar = 0;
   defaultAR = 0;
@@ -127,7 +127,6 @@ class OsuLobbyBot {
 
   skipVotesTotal = 0;
 
-  matchFinishTimeoutSaver = 0;
   matchFinishTalkWithAIAfterSeconds = 10;
 
   startMatchAllPlayersReadyTimeout = 10;
@@ -421,10 +420,7 @@ class OsuLobbyBot {
 
         try {
           if (this.roomMode == "Auto Map Pick") {
-            await Promise.all([
-              await this.changeDifficultyBaseOnPlayersRank(),
-              await this.autoMapPick(),
-            ]);
+            await this.autoMapPick();
 
             if (this.rotateHostList.length >= 4) {
               this.startMatchTimer(this.startMatchTimeout);
@@ -435,12 +431,11 @@ class OsuLobbyBot {
             //Host Rotation
             await this.hostRotate();
           }
-          this.matchStartTime = null;
 
-          clearTimeout(this.matchFinishTimeoutSaver);
+          this.matchStartTime = null;
+          this.osuChannel?.lobby.setName(this.getLobbyName());
 
           if (!this.osuChannel) return;
-          await this.osuChannel?.lobby.setName(this.getLobbyName());
         } catch (e) {
           console.error("ERROR: ", e);
           this.closelobby();
@@ -508,6 +503,7 @@ class OsuLobbyBot {
             }
           } else {
             this.currentBeatmap = this.convertBeatmapV2ToV1(b);
+            await this.fastlink();
           }
         } catch (e) {
           await this.closelobby();
@@ -987,17 +983,21 @@ class OsuLobbyBot {
   }
   async votechangemode(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-    if (this.rotateHostList.length <= this.minPlayersNeededToChangeMode) {
+    if (
+      this.rotateHostList.length != this.minPlayersNeededToChangeMode &&
+      this.roomMode == "Auto Map Pick"
+    ) {
       this.osuChannel.sendMessage(
         `The lobby needs at least ${this.minPlayersNeededToChangeMode} players to start change the mode`
       );
       return;
     }
+
     this.voteHandler(message, "Change Mode", playerName);
 
     if (
       this.voteData.filter((v) => v.voteType == "Change Mode").length >
-      this.rotateHostList.length / 3
+      this.rotateHostList.length / 2
     ) {
       this.resetVote("Change Mode");
       if (this.roomMode == "Host Rotate") {
@@ -1599,12 +1599,7 @@ class OsuLobbyBot {
 
         console.log(msg);
 
-        await Promise.all([
-          this.osuChannel.sendMessage(msg),
-          this.osuChannel.sendMessage(
-            `Faster Link: https://catboy.best/d/${bm.beatmapset_id} - https://nerinyan.moe/d/${bm.beatmapset_id}`
-          ),
-        ]);
+        this.osuChannel.sendMessage(msg);
       }
     } catch (e) {
       await console.log(e);

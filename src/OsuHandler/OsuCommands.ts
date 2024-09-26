@@ -2,11 +2,11 @@
 class OsuCommands {
   commandsList = {
     rhelp: "// Use it to get all the commands for players",
-    votechangemode: `(playerName: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map" when the lobby has at least 3 players, the parameter must be the playerName`,
     voteskipmap: `(playerName: string) // Use it to skip the current map, need at at least 15 players to use this command`,
     voteskiphost: "(playerName: string) // Use it to skip the current host",
     voteabortmatch: "(playerName: string) // Use it to abort the match",
     votestartmatch: "(playerName: string) // Use it to start the match",
+    votechangemode: `(playerName: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map" when the lobby has at least 16 players, the parameter must be the playerName`,
     fastlink:
       "// Players can use this command themself to get the faster links to download beatmap",
     timeleft:
