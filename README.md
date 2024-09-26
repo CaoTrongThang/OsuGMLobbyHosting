@@ -29,6 +29,7 @@ This project is an advanced Osu! Hosting Lobby that uses AI to efficiently manag
 - **`voteskiphost`**: Skips the current host.
 - **`voteabortmatch`**: Aborts the current match.
 - **`votestartmatch`**: Starts the match.
+- **`fastlink`**: Gets the faster links of the beatmap.
 - **`timeleft`**: Displays the time left in the current match, if it's in progress.
 
 ### System Functions (This Is Only For AI To Use)

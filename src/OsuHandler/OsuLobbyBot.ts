@@ -842,8 +842,14 @@ class OsuLobbyBot {
       this.osuChannel.sendMessage(`${command.key}`);
     }
   }
-  async timeLeft(message?: Banchojs.BanchoMessage, playerName?: string) {
-    if (!this.osuChannel) return;
+  async fastlink() {
+    if (!this.osuChannel || !this.currentBeatmap) return;
+    this.osuChannel.sendMessage(
+      `Faster Link: https://catboy.best/d/${this.currentBeatmap.beatmapset_id} - https://nerinyan.moe/d/${this.currentBeatmap.beatmapset_id}`
+    );
+  }
+
+  async timeleft(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
 
     const timeLeft = this.calculateTimeLeft();
@@ -1053,6 +1059,9 @@ class OsuLobbyBot {
     if (timeSecond > 0) {
       await this.osuChannel?.lobby.startMatch(timeSecond);
     } else {
+      if (this.isMatchStarting == true) {
+        await this.abortMatchTimer();
+      }
       await this.osuChannel?.lobby.startMatch();
     }
   }

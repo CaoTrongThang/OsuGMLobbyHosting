@@ -7,8 +7,10 @@ class OsuCommands {
     voteskiphost: "(playerName: string) // Use it to skip the current host",
     voteabortmatch: "(playerName: string) // Use it to abort the match",
     votestartmatch: "(playerName: string) // Use it to start the match",
+    fastlink:
+      "// Players can use this command themself to get the faster links to download beatmap",
     timeleft:
-      "// Player can use it to get the time left of the match if it's in progress",
+      "// Players can use it to get the time left of the match if it's in progress",
   };
 
   systemFunctionsList = {
