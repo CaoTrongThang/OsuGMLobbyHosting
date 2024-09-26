@@ -246,9 +246,11 @@ class OsuLobbyBot {
 
       this.osuChannel.lobby.on("playerJoined", async (lobbyPlayer) => {
         if (!this.osuChannel) return;
-        console.log(`+ ${lobbyPlayer.player.user.username} joined the lobby`);
-        await this.updateRotateHostList(lobbyPlayer.player, "joined");
+        console.log(
+          `+ ${lobbyPlayer.player.user.username} (#${lobbyPlayer.player.user.ppRank}) joined the lobby`
+        );
         if (lobbyPlayer.player.user.ppRank <= 1000000) {
+          await this.updateRotateHostList(lobbyPlayer.player, "joined");
           if (this.roomMode == "Host Rotate") {
             if (this.rotateHostList.length == 1) {
               await this.hostRotate();
@@ -299,9 +301,22 @@ class OsuLobbyBot {
 
           if (this.rotateHostList.length == 0) {
             await this.osuChannel?.lobby.setMods([], true);
-            await this.changeDifficultyBaseOnPlayersRank();
-            await this.osuChannel?.lobby.setName(this.getLobbyName());
             return;
+          }
+
+          await this.changeDifficultyBaseOnPlayersRank();
+          await this.osuChannel?.lobby.setName(this.getLobbyName());
+
+          if (this.currentBeatmap) {
+            if (
+              !this.checkBeatmapMeetRequirements(
+                Number(this.currentBeatmap.difficultyrating),
+                Number(this.currentBeatmap.mode),
+                Number(this.currentBeatmap.total_length)
+              )
+            ) {
+              this.autoMapPick();
+            }
           }
 
           if (
