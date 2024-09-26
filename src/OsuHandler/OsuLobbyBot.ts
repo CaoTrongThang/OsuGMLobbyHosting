@@ -301,7 +301,6 @@ class OsuLobbyBot {
 
           if (this.rotateHostList.length == 0) {
             await this.osuChannel?.lobby.setMods([], true);
-            return;
           }
 
           await this.changeDifficultyBaseOnPlayersRank();
