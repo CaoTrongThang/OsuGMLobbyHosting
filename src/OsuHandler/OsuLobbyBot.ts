@@ -590,7 +590,7 @@ class OsuLobbyBot {
 
           if (playerS) {
             let ppAcc = await this.calculatePlayerPPAndAcc(bm.id, playerS[0]);
-
+            if (!ppAcc) return;
             lastMatch += `\n- Match Result Of ${
               x.playerName
             } : PP: ${ppAcc.pp.toFixed(2)}, Accuracy ${ppAcc.acc}%, Combo: x${
@@ -615,6 +615,7 @@ class OsuLobbyBot {
   }
 
   async calculatePlayerPPAndAcc(beatmapID: number, u: PlayerRecentPlays) {
+    if (!u) return;
     let modsStr = u.enabled_mods
       ? this.getMods(Number(u.enabled_mods))
           .map((x) => x.shortMod)
@@ -1389,6 +1390,7 @@ class OsuLobbyBot {
         let stats = ``;
 
         for (const play of topPlays) {
+          if (!play) return;
           let bm = await osuAPIRequest.getBeatmap(play.beatmap_id);
           let acc = this.calculateAccuracy(play);
           let modsStr = play.enabled_mods
@@ -1453,6 +1455,7 @@ class OsuLobbyBot {
         let bm = await osuAPIRequest.getBeatmap(u.beatmap_id);
 
         let ppAcc = await this.calculatePlayerPPAndAcc(Number(u.beatmap_id), u);
+        if (!ppAcc) return;
 
         let stats = `Recent Play Of ${userName} In Beatmap ${
           bm[0].title
