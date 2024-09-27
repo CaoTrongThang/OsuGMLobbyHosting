@@ -278,7 +278,6 @@ class OsuLobbyBot {
               } else {
                 await this.autoMapPick();
               }
-              await this.fastlink();
             }
           }
           if (!this.isMatchStarting && !this.useAI) {
