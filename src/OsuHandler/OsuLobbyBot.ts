@@ -278,6 +278,7 @@ class OsuLobbyBot {
               } else {
                 await this.autoMapPick();
               }
+              await this.fastlink();
             }
           }
           if (!this.isMatchStarting && !this.useAI) {
@@ -317,7 +318,7 @@ class OsuLobbyBot {
               this.autoMapPick();
             }
           }
-          //Test
+
           if (
             lobbyPlayer.user.id == this.currentHost?.user.id &&
             this.roomMode == "Host Rotate"
