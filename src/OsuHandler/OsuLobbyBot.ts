@@ -214,6 +214,15 @@ class OsuLobbyBot {
         this.createAndHandleLobby();
       }
     }, 1000 * 1800);
+
+    setInterval(async () => {
+      if (this.rotateHostList.length === 0 && this.isMatchPlaying) {
+        await this.osuChannel?.lobby.abortMatch();
+        await this.abortMatchTimer();
+        await this.osuChannel?.sendMessage("Match aborted because no players");
+        this.isMatchPlaying = false;
+      }
+    }, 1000 * 3);
   }
 
   async createAndHandleLobby() {
@@ -531,15 +540,6 @@ class OsuLobbyBot {
         this.voteData = [];
         this.lastBeatmap = this.osuChannel?.lobby.beatmap;
         this.isMatchPlaying = true;
-
-        if (this.rotateHostList.length === 0 && this.isMatchPlaying) {
-          await this.osuChannel?.lobby.abortMatch();
-          await this.abortMatchTimer();
-          await this.osuChannel?.sendMessage(
-            "Match aborted because no players"
-          );
-          this.isMatchPlaying = false;
-        }
       });
 
       this.osuChannel.lobby.on("allPlayersReady", async () => {

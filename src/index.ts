@@ -5,7 +5,7 @@ import * as http from "http";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 25565;
 
 //This HTTP server will keep the bot alive, not be shut down by Render
 const server = http.createServer((req, res) => {
@@ -15,8 +15,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
-        message: "Bot is active",
-        timestamp: new Date().toISOString(),
+        message: `Hello}`,
       })
     );
   } else {
