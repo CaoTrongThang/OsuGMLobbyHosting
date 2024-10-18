@@ -8,7 +8,7 @@ class OsuCommands {
     voteskiphost: "(playerName: string) // Use it to skip the current host",
     voteabortmatch: "(playerName: string) // Use it to abort the match",
     votestartmatch: "(playerName: string) // Use it to start the match",
-    votechangemode: `(playerName: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map" when the lobby has at least ${osuLobby.roomSize} players, the parameter must be the playerName`,
+    votechangemode: `(playerName: string) // Use it to switch the lobby's mode between "Host Rotate" and "Random Map" when all the players in the lobby vote for it, the parameter must be the playerName`,
     votelastmap: `(playerName: string) // You and the player can use this to get the last map, maybe they want to play that map again`,
     fastlink:
       "// Players can use this command themself to get the faster links to download beatmap",
