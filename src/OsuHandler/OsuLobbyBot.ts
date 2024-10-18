@@ -94,6 +94,8 @@ class OsuLobbyBot {
     // Add more mods as needed
   ];
 
+  roomSize = 6;
+
   rotateHostList: Banchojs.BanchoLobbyPlayer[];
 
   playersChatHistory: PlayerChatHistory[] = [];
@@ -200,7 +202,7 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       if (this.osuChannel) {
-        await this.osuChannel.lobby.setSize(16);
+        await this.osuChannel.lobby.setSize(this.roomSize);
       }
       if (!this.osuClient.isConnected() && !this.osuChannel) {
         console.log("Reconnecting to the lobby...");
@@ -247,7 +249,7 @@ class OsuLobbyBot {
       await this.autoMapPick();
 
       await this.osuChannel.lobby.setMods([], true);
-
+      await this.osuChannel.lobby.setSize(this.roomSize);
       console.log(
         "===================== Lobby created! Name: " +
           this.osuChannel.lobby.name
@@ -1031,8 +1033,8 @@ class OsuLobbyBot {
     this.voteHandler(message, "Change Mode", playerName);
 
     if (
-      this.voteData.filter((v) => v.voteType == "Change Mode").length >
-      this.rotateHostList.length / 2
+      this.voteData.filter((v) => v.voteType == "Change Mode").length ==
+      this.roomSize
     ) {
       this.resetVote("Change Mode");
       if (this.roomMode == "Host Rotate") {
