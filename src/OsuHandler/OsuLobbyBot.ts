@@ -94,7 +94,7 @@ class OsuLobbyBot {
     // Add more mods as needed
   ];
 
-  roomSize = 6;
+  maxRoomSize = 10;
 
   rotateHostList: Banchojs.BanchoLobbyPlayer[];
 
@@ -134,7 +134,9 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 45;
+  startMatchTimeout = 50;
+
+  minPlayerRank = 500000;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -202,7 +204,7 @@ class OsuLobbyBot {
 
     setInterval(async () => {
       if (this.osuChannel) {
-        await this.osuChannel.lobby.setSize(this.roomSize);
+        await this.osuChannel.lobby.setSize(this.maxRoomSize);
       }
       if (!this.osuClient.isConnected() && !this.osuChannel) {
         console.log("Reconnecting to the lobby...");
@@ -249,7 +251,7 @@ class OsuLobbyBot {
       await this.autoMapPick();
 
       await this.osuChannel.lobby.setMods([], true);
-      await this.osuChannel.lobby.setSize(this.roomSize);
+      await this.osuChannel.lobby.setSize(this.maxRoomSize);
       console.log(
         "===================== Lobby created! Name: " +
           this.osuChannel.lobby.name
@@ -260,7 +262,7 @@ class OsuLobbyBot {
         console.log(
           `+ ${lobbyPlayer.player.user.username} (#${lobbyPlayer.player.user.ppRank}) joined the lobby`
         );
-        if (lobbyPlayer.player.user.ppRank <= 1000000) {
+        if (lobbyPlayer.player.user.ppRank <= 500000) {
           await this.updateRotateHostList(lobbyPlayer.player, "joined");
           if (this.roomMode == "Host Rotate") {
             if (this.rotateHostList.length == 1) {
@@ -360,9 +362,13 @@ class OsuLobbyBot {
             ) {
               if (!this.osuChannel) return;
               let state = await this.getPlayersStates();
-              if (state?.totalReady == state?.totalPlayer) {
-                await this.startMatchTimer();
-              }
+
+              if (state)
+                if (state?.totalPlayer > 0) {
+                  if (state?.totalReady == state?.totalPlayer) {
+                    await this.startMatchTimer();
+                  }
+                }
             } else if (
               this.roomMode == "Auto Map Pick" &&
               this.rotateHostList.length >= 5
@@ -1034,7 +1040,7 @@ class OsuLobbyBot {
 
     if (
       this.voteData.filter((v) => v.voteType == "Change Mode").length ==
-      this.roomSize
+      this.maxRoomSize
     ) {
       this.resetVote("Change Mode");
       if (this.roomMode == "Host Rotate") {
@@ -1773,41 +1779,48 @@ class OsuLobbyBot {
 
       let playersStr = "";
       let slotIndex = 0;
+      let slotStr: string[] = [];
+      let slots = this.osuChannel?.lobby.slots;
+
       for (const slot of this.osuChannel?.lobby.slots || []) {
-        if (slot) {
-          if (slot.user) {
-            if (this.osuChannel?.lobby.getPlayerSlot(slot) == slotIndex) {
-              if (slot.user.id == this.currentHost?.user.id) {
-                playersStr += `:yellow_square: **[${
-                  slot.user.username.length > 10
-                    ? slot.user.username.slice(0, 8) + "..."
-                    : slot.user.username
+        slotStr.push("");
+      }
+
+      for (let i = this.maxRoomSize; i < slots!.length; i++) {
+        slotStr[i] = ":lock:";
+      }
+
+      for (let i = 0; i < this.maxRoomSize; i++) {
+        if (slots![i]) {
+          if (slots![i].user) {
+            if (this.osuChannel?.lobby.getPlayerSlot(slots![i]) == slotIndex) {
+              if (slots![i].user.id == this.currentHost?.user.id) {
+                slotStr[slotIndex] = `:yellow_square: **[${
+                  slots![i].user.username.length > 10
+                    ? slots![i].user.username.slice(0, 8) + "..."
+                    : slots![i].user.username
                 } #${utils.formatNumber(
-                  slot.user.ppRank
-                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
+                  slots![i].user.ppRank
+                )}](${`https://osu.ppy.sh/users/${slots![i].user.id}`})**`;
               } else {
-                playersStr += `:green_square: **[${
-                  slot.user.username.length > 10
-                    ? slot.user.username.slice(0, 10) + "..."
-                    : slot.user.username
+                slotStr[slotIndex] = `:green_square: **[${
+                  slots![i].user.username.length > 10
+                    ? slots![i].user.username.slice(0, 10) + "..."
+                    : slots![i].user.username
                 } #${utils.formatNumber(
-                  slot.user.ppRank
-                )}](${`https://osu.ppy.sh/users/${slot.user.id}`})**\n`;
+                  slots![i].user.ppRank
+                )}](${`https://osu.ppy.sh/users/${slots![i].user.id}`})**`;
               }
               slotIndex++;
             } else {
-              playersStr += ":black_large_square:\n";
+              slotStr[slotIndex] = ":black_large_square:";
               slotIndex++;
             }
           }
         } else {
-          playersStr += ":black_medium_square:\n";
+          slotStr[slotIndex] = ":black_medium_square:";
           slotIndex++;
         }
-      }
-
-      if (playersStr == "") {
-        playersStr = "No players in the lobby";
       }
 
       let beatmapStr = `[${this.currentBeatmap?.title}(${Number(
@@ -1853,7 +1866,7 @@ class OsuLobbyBot {
         .addFields(
           {
             name: `**Players** (${this.rotateHostList.length}/${this.osuChannel?.lobby.slots.length})`,
-            value: `${playersStr}`,
+            value: `${slotStr.join("\n")}`,
             inline: true,
           },
           {
@@ -1862,7 +1875,7 @@ class OsuLobbyBot {
             inline: true,
           },
           {
-            name: "**Time Left**",
+            name: `**Time Left (${this.totalMatchPlayedFromStartLobby} Matches Played)**`,
             value: `${
               this.calculateTimeLeft()
                 ? utils.formatSeconds(this.calculateTimeLeft())
