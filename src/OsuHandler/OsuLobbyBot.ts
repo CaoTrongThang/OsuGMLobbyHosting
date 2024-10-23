@@ -134,7 +134,7 @@ class OsuLobbyBot {
 
   startMatchAllPlayersReadyTimeout = 10;
   timeoutAfterRoomModeChangeToAutoPick = 20;
-  startMatchTimeout = 60;
+  startMatchTimeout = 45;
 
   beatmapsSinceDay = new Date(2018, 1, 1);
   beatmaps: v1Beatmap[] = [];
@@ -1826,7 +1826,7 @@ class OsuLobbyBot {
 
       const chatHistory = this.playersChatHistory;
 
-      const startIndex = chatHistory.length - 5;
+      const startIndex = chatHistory.length - 8;
       let chathistoryStr = chatHistory
         .slice(startIndex >= 0 ? startIndex : 0, chatHistory.length)
         .map(
