@@ -717,12 +717,12 @@ class OsuLobbyBot {
     }
   }
 
-  sendVoteMessage(vote: VoteData) {
+  sendVoteMessage(vote: VoteData, requireVotes: number) {
     if (this.osuChannel) {
       this.osuChannel.sendMessage(
         `${vote.player.username} voted to ${vote.voteType}: ${
           this.voteData.filter((v) => v.voteType == vote.voteType).length
-        }/${this.rotateHostList.length} votes`
+        }/${Math.fround(requireVotes)}`
       );
     }
   }
@@ -855,11 +855,8 @@ class OsuLobbyBot {
   //Show players commands
   async rhelp(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
-    await this.osuChannel.sendMessage(
-      `This is list of the commands, start with "!":`
-    );
     for (const command of this.getObjectKeyValue(osuCommands.commandsList)) {
-      this.osuChannel.sendMessage(`${command.key}`);
+      this.osuChannel.sendMessage(`- !${command.key}`);
     }
   }
   async fastlink() {
@@ -914,7 +911,7 @@ class OsuLobbyBot {
       };
 
       this.voteData.push(vote);
-      this.sendVoteMessage(vote);
+      this.sendVoteMessage(vote, this.rotateHostList.length / 3);
     } else {
       if (playerName) {
         if (
@@ -932,7 +929,7 @@ class OsuLobbyBot {
             voteType: voteT,
           };
           this.voteData.push(vote);
-          this.sendVoteMessage(vote);
+          this.sendVoteMessage(vote, this.rotateHostList.length / 3);
         }
       }
     }
@@ -942,7 +939,7 @@ class OsuLobbyBot {
     if (voteT == undefined) return;
     this.voteData = this.voteData.filter((v) => v.voteType != voteT);
   }
-  async voteabortmatch(message?: Banchojs.BanchoMessage, playerName?: string) {
+  async abortmatch(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
 
     this.voteHandler(message, "Abort Match", playerName);
@@ -957,7 +954,7 @@ class OsuLobbyBot {
     }
   }
 
-  async votestartmatch(message?: Banchojs.BanchoMessage, playerName?: string) {
+  async votestart(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     this.voteHandler(message, "Start Match", playerName);
 
@@ -971,7 +968,7 @@ class OsuLobbyBot {
     }
   }
 
-  async voteskiphost(message?: Banchojs.BanchoMessage, playerName?: string) {
+  async skiphost(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     if (!(this.roomMode == "Host Rotate")) return;
 
@@ -986,7 +983,7 @@ class OsuLobbyBot {
       this.resetVote("Skip Host");
     }
   }
-  async voteskipmap(message?: Banchojs.BanchoMessage, playerName?: string) {
+  async skipmap(message?: Banchojs.BanchoMessage, playerName?: string) {
     if (!this.osuChannel) return;
     if (!(this.roomMode == "Auto Map Pick")) return;
 

@@ -4,11 +4,11 @@ import osuLobby from "./OsuLobbyBot";
 class OsuCommands {
   commandsList = {
     rhelp: "// Use it to get all the commands for players",
-    voteskipmap: `(playerName: string) // Use it to skip the current map`,
-    voteskiphost: "(playerName: string) // Use it to skip the current host",
-    voteabortmatch: "(playerName: string) // Use it to abort the match",
-    votestartmatch: "(playerName: string) // Use it to start the match",
-    votelastmap: `(playerName: string) // You and the player can use this to get the last map, maybe they want to play that map again`,
+    skipmap: `(playerName: string) // Use it to skip the current map`,
+    skiphost: "(playerName: string) // Use it to skip the current host",
+    abortmatch: "(playerName: string) // Use it to abort the match",
+    startmatch: "(playerName: string) // Use it to start the match",
+    lastmap: `(playerName: string) // You and the player can use this to get the last map, maybe they want to play that map again`,
     fastlink:
       "// Players can use this command themself to get the faster links to download beatmap",
     timeleft:
