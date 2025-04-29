@@ -8,7 +8,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 25565;
 
-const COOLDOWN_MS = 50000; // 30 seconds cooldown
+const COOLDOWN_MS = 50000;
 
 interface PlayerData {
   playerName: string;
@@ -46,9 +46,7 @@ const server = http.createServer((req, res) => {
         message: `Hello}`,
       })
     );
-  }
-
-  if (req.method === "POST" && reqUrl.pathname === "/addme") {
+  } else if (req.method === "POST" && reqUrl.pathname === "/addme") {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk.toString();
@@ -57,26 +55,59 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       try {
         const data = JSON.parse(body);
-        if (!data.playerName || !data.modpackName || !data.version) {
-          res.writeHead(400);
-          return res.end(JSON.stringify({ error: "Missing required fields" }));
+        let playersToUpdate = [];
+
+        // Handle batch format
+        if (data.players && Array.isArray(data.players)) {
+          playersToUpdate = data.players;
+        }
+        // Handle single player format
+        else if (data.playerName) {
+          playersToUpdate = [data];
         }
 
-        const playerData: PlayerData = {
-          playerName: data.playerName,
-          currentDay: data.currentDay,
-          modpackName: data.modpackName,
-          version: data.version,
-          lastActive: Date.now(),
-        };
+        // Validate all players
+        for (const playerData of playersToUpdate) {
+          if (
+            !playerData.playerName ||
+            !playerData.modpackName ||
+            !playerData.version
+          ) {
+            res.writeHead(400);
+            return res.end(
+              JSON.stringify({
+                error: "Missing required fields in one or more players",
+                invalidPlayer: playerData,
+              })
+            );
+          }
+        }
 
-        activePlayers.set(data.playerName, playerData);
-        console.log(
-          `Updated ${data.playerName} | ${activePlayers.size} players total`
+        // Update all valid players
+        playersToUpdate.forEach(
+          (playerData: {
+            playerName: string;
+            currentDay: any;
+            modpackName: any;
+            version: any;
+          }) => {
+            activePlayers.set(playerData.playerName, {
+              playerName: playerData.playerName,
+              currentDay: playerData.currentDay || 0, // default value
+              modpackName: playerData.modpackName,
+              version: playerData.version,
+              lastActive: Date.now(),
+            });
+          }
         );
 
         res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
+        res.end(
+          JSON.stringify({
+            success: true,
+            updatedPlayers: playersToUpdate.length,
+          })
+        );
       } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: "Invalid JSON" }));
