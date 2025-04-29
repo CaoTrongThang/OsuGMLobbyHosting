@@ -8,7 +8,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 25565;
 
-const COOLDOWN_MS = 30000; // 30 seconds cooldown
+const COOLDOWN_MS = 50000; // 30 seconds cooldown
 
 interface PlayerData {
   playerName: string;
@@ -46,7 +46,9 @@ const server = http.createServer((req, res) => {
         message: `Hello}`,
       })
     );
-  } else if (req.method === "POST" && reqUrl.pathname === "/ping") {
+  }
+
+  if (req.method === "POST" && reqUrl.pathname === "/addme") {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk.toString();
@@ -65,7 +67,7 @@ const server = http.createServer((req, res) => {
           currentDay: data.currentDay,
           modpackName: data.modpackName,
           version: data.version,
-          lastActive: Date.now(), // Track timestamp instead of countdown
+          lastActive: Date.now(),
         };
 
         activePlayers.set(data.playerName, playerData);
@@ -81,11 +83,15 @@ const server = http.createServer((req, res) => {
       }
     });
   } else if (req.method === "GET" && reqUrl.pathname === "/players") {
-    const players = Array.from(activePlayers.values()).map((p) => ({
-      playerName: p.playerName,
-      currentDay: p.currentDay,
-      modpackName: p.modpackName,
-    }));
+    const now = Date.now();
+    const players = Array.from(activePlayers.values())
+      .filter((p) => now - p.lastActive <= COOLDOWN_MS)
+      .map((p) => ({
+        playerName: p.playerName,
+        currentDay: p.currentDay,
+        modpackName: p.modpackName,
+        version: p.version,
+      }));
 
     res.writeHead(200);
     res.end(

@@ -196,11 +196,11 @@ class OsuLobbyBot {
     }, 1000 * 10);
 
     //Update lobby name when the match is playing
-    setInterval(async () => {
-      if (this.isMatchPlaying) {
-        this.osuChannel?.lobby.setName(this.getLobbyName());
-      }
-    }, 1000 * 30);
+    // setInterval(async () => {
+    //   if (this.isMatchPlaying) {
+    //     this.osuChannel?.lobby.setName(this.getLobbyName());
+    //   }
+    // }, 1000 * 30);
 
     setInterval(async () => {
       if (this.osuChannel) {
