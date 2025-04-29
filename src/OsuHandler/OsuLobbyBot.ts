@@ -754,22 +754,20 @@ class OsuLobbyBot {
       if (this.rotateHostList.length == 0) {
         return `${this.defaultMapMinDif.toFixed(
           1
-        )}* - ${this.defaultMapMaxDif.toFixed(1)}*| 0:00s | ${
-          this.roomMode
-        } - !rhelp`;
+        )}* - ${this.defaultMapMaxDif.toFixed(1)}* | ${this.roomMode} - !rhelp`;
       } else {
         if (this.isMatchPlaying == false) {
           return `${this.currentMapMinDif.toFixed(
             1
-          )}* - ${this.currentMapMaxDif.toFixed(1)}*| 0:00s | ${
+          )}* - ${this.currentMapMaxDif.toFixed(1)}* | ${
             this.roomMode
           } - !rhelp`;
         } else {
           return `${this.currentMapMinDif.toFixed(
             1
-          )}* - ${this.currentMapMaxDif.toFixed(1)}*| ${utils.formatSeconds(
-            this.calculateTimeLeft()
-          )} | ${this.roomMode} - !rhelp`;
+          )}* - ${this.currentMapMaxDif.toFixed(1)}* | ${
+            this.roomMode
+          } - !rhelp`;
         }
       }
     }
@@ -1907,6 +1905,7 @@ class OsuLobbyBot {
       this.closelobby();
     }
   }
+
   chatHistoryFormat() {
     if (this.playersChatHistory.length > 0) {
       return this.playersChatHistory
